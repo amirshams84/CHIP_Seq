@@ -1,0 +1,20 @@
+{
+    "GENERAL":{
+        "TITLE": "TRIAL1",
+        "GENOME": "mm10",
+        "DATA_DIR": "/data/shamsaddinisha/CHIP_Seq/WORKDIR/TRIAL1/mm10/WT_Ets1/REPORT",
+        "REF_DIR": "./",
+        "REPORT_DIR": "/data/shamsaddinisha/CHIP_Seq/WORKDIR/REPORT"
+
+    },
+    "PIPELINE":{
+        "overview": ["provenance"],
+        "preprocess": ["fastqc", "cutadapt"],
+        "alignment": ["bowtie2"],
+        "post_alignment": ["picard", "samtools", "pooling"],
+        "peak_calling": ["narrow_peak", "signal_p-value"],
+        "post_peak_calling": ["black_list_filtering", "pvalue_filtering", "idr"],
+
+    },
+    
+}
