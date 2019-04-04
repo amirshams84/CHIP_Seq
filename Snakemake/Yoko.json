@@ -3,8 +3,9 @@
         "PROJECT": "Trial_Project",
         "EXPERIMENT": "Trial_Experiment",
         "TITLE": "YOKO",
+        "EXECUTION_MODE": "DEVELOPMENT",
         "INFOLINK": "https://www.mothur.org/wiki/MiSeq_SOP",
-        "WORKDIR": "/data/shamsaddinisha/CHIP_Seq",
+        "WORKDIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP",
         "DATADIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/fastq/subsample_big",
     },
     "DATA":{
@@ -15,8 +16,8 @@
         "SAMPLE_SUFFIX": "fastq.gz",
         "GENOME": "mm10",
         "READ_LENGTH": "75",
-
     },
+    
     "METADATA":{
         "METADATA_FILE": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/Metadata/sample_metadata.txt"
     },
@@ -38,8 +39,8 @@
     },
     
     "PRE_PROCESS":{
-        "CUTADAPT_SINGLE": "--minimum-length=3 --quality-base=33 --error-rate=0.0 --trim-n -a CTGTCTCTTATA",
-        "CUTADAPT_PAIRED": "--minimum-length=3 --quality-base=33 --error-rate=0.0 --trim-n -a CTGTCTCTTATA -A CTGTCTCTTATA",
+        "CUTADAPT_SINGLE": "--minimum-length=3 --quality-base=33 --error-rate=0.1 --trim-n -a CTGTCTCTTATA",
+        "CUTADAPT_PAIRED": "--minimum-length=3 --quality-base=33 --error-rate=0.1 --trim-n -a CTGTCTCTTATA -A CTGTCTCTTATA",
     },
     "ALIGNMENT":{
         "BOWTIE2_SINGLE": "-k 1 ",
