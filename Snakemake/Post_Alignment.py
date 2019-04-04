@@ -6,6 +6,7 @@ shell.prefix("source /data/shamsaddinisha/conda/etc/profile.d/conda.sh")
 # Email: amir.shams84@gmail.com
 # Aim: Snakemake workflow for POST Alignment
 # snakemake --snakefile Post_Alignment.py --configfile Yoko.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile Post_Alignment.py --configfile Yoko.json --rulegraph | dot -Tsvg > Post_Alignment.svg
 # ################################### IMPORT ##################################### #
 
 
@@ -61,6 +62,7 @@ WORKDIR = utility.fix_path(config_general_Dict["WORKDIR"])
 config_data_Dict = config["DATA"]
 LAYOUT = config_data_Dict["LAYOUT"].lower()
 GENOME = config_data_Dict["GENOME"].lower()
+READ_LENGTH = config_data_Dict["READ_LENGTH"]
 # -----------------------------------
 # ++++++++++++++++++++++++++++++++++++
 #CONDA
@@ -110,19 +112,15 @@ post_alignment_List = []
 for sample, sample_Dict in metadata_Dict.items():
 	#
 	alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam".format(design=sample_Dict["Design"], sample=sample))
-	alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/alignment/{sample}.samtools.txt".format(design=sample_Dict["Design"], sample=sample))
 	#
 	#POST_ALIGNMENT
 	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam".format(design=sample_Dict["Design"], sample=sample))
-	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{sample}.processed.samtools.txt".format(design=sample_Dict["Design"], sample=sample))
 
 for design in design_Dict:
 	#
 	alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{pooled_case}.bam".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
-	alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/alignment/{pooled_case}.samtools.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 	##POOLING
 	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{pooled_case}.processed.bam".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
-	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{pooled_case}.processed.samtools.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 # ################################### PIPELINE FLOW ############################ #
 
 
@@ -137,11 +135,11 @@ rule End_Point:
 
 rule Post_Alignment:
 	input:
-		bowtie2_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
-		bowtie2_index_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
+		bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
+		bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
 	output:
 		processed_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
-		processed_index_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
+		processed_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
 	priority: 993
 	threads: PROCESSORS
 	resources:
@@ -149,167 +147,53 @@ rule Post_Alignment:
 	message: "Post_Alignment: {wildcards.design}|{wildcards.sample}"
 	run:
 		shell("""
-			echo "{ACTIVATE_CONDA_PY2}"
-			{ACTIVATE_CONDA_PY2}
-			########################################################
+			#
+			module load samtools/1.9
+			module load bedtools/2.27.1
+			module load deeptools/3.1.3
+			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/post_alignment
+			mkdir -p $QC_PATH
+			#
 			#
 			if [ ! -f ./Script/{GENOME}.blacklist.bed.gz ]; then
 				wget {config_reference_Dict[BLACK_LIST]} -O ./Script/{GENOME}.blacklist.bed.gz
 			fi
-			#
 			AWK_COMMAND='{config_post_alignment_Dict[FILTER_CHROMOSOME]}'
 			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "GENERAL FILTERING" | tee >(cat >&2)
-			printf "%s\\n" "samtools view --threads {threads} -h {FILTER_MAPQ} {input.bowtie2_bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt" | tee >(cat >&2)
+			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
+			printf "%s\\n" "deeptools/3.1.3" | tee >(cat >&2)
+			printf "%s\\n" "Filtering bam file, correctGC Bias, drop short alignment"  | tee >(cat >&2)
+			printf "INPUT1: %s\\n" "{input.bam}"  | tee >(cat >&2)
+			printf "INPUT2: %s\\n" "{input.bam_index}"  | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.processed_bam}"  | tee >(cat >&2)
+			printf "OUTPUT2: %s\\n" "{output.processed_bam_index}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt" | tee >(cat >&2)
 			printf "%s\\n" "bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt" | tee >(cat >&2)
 			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.blk.filt -o {output.processed_bam}.tmp" | tee >(cat >&2)
 			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt"  | tee >(cat >&2)
+			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			samtools view --threads {threads} -h {FILTER_MAPQ} {input.bowtie2_bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt
+			samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt
 			bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt
 			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.blk.filt -o {output.processed_bam}.tmp
 			samtools index -@ {threads} -b {output.processed_bam}.tmp
+			alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt
+			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}
+			samtools index -@ {threads} -b {output.processed_bam}
+			rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen
 			##
 			#
 			end_time="$(date -u +%s)"
 			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
 			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "FRAGMENT LENGTH FILTER" | tee >(cat >&2)
-			printf "%s\\n" "alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength 75 --outFile {output.processed_bam}.fraglen"  | tee >(cat >&2)
-			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			alignmentSieve --bam {input.bowtie2_bam} --numberOfProcessors {threads} --minFragmentLength 75 --outFile {output.processed_bam}.fraglen --filteredOutReads {output.processed_bam}.discarded
-			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}.tmp
-			samtools index -@ {threads} -b {output.processed_bam}.tmp
-			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.discarded -o {output.processed_bam}.discarded.bam
-			samtools index -@ {threads} -b {output.processed_bam}.discarded.bam
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "CORRECT GC BIAS" | tee >(cat >&2)
-			printf "%s\\n" "computeGCBias --bamfile {output.processed_bam}.tmp --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]} --genome {config_reference_Dict[2BIT]} --fragmentLength 150 --GCbiasFrequenciesFile {output.processed_bam}.GC_freq" | tee >(cat >&2)
-			printf "%s\\n" "correctGCBias --bamfile {output.processed_bam}.tmp --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]} --genome {config_reference_Dict[2BIT]} --GCbiasFrequenciesFile {output.processed_bam}.GC_freq --correctedFile {output.processed_bam}" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			computeGCBias --bamfile {output.processed_bam}.tmp --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]} --genome {config_reference_Dict[2BIT]} --fragmentLength 150 --GCbiasFrequenciesFile {output.processed_bam}.GC_freq
-			correctGCBias --bamfile {output.processed_bam}.tmp --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]} --genome {config_reference_Dict[2BIT]} --GCbiasFrequenciesFile {output.processed_bam}.GC_freq --correctedFile {output.processed_bam}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			
-		""")
-
-
-rule Post_Alignment_QC:
-	input:
-		processed_Bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
-		processed_index_Bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
-	output:
-		flagstats = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{sample}.processed.samtools.txt",
-		spp_phantomPeak = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{sample}.processed.spp.pdf",
-		spp_report = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{sample}.processed.spp.txt",
-		complexity_report = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/report/post_alignment/{sample}.processed.complexity.txt",
-	priority: 996
-	threads: PROCESSORS
-	resources:
-		mem_mb = MEMORY
-	message: "Post_Alignment_QC: {wildcards.design}|{wildcards.sample}"
-	run:
-		
-		shell("""
-			echo "{ACTIVATE_CONDA_PY2}"
-			{ACTIVATE_CONDA_PY2}
-			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/post_alignment
-			mkdir -p $QC_PATH
-			unset DISPLAY
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "qualimap bamqc -bam {input.processed_Bam} -nt {threads} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap {config_qualimap_Dict}" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			qualimap bamqc -bam {input.processed_Bam} -nt {threads} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap {config_qualimap_Dict}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "fastqc -o $QC_PATH --format bam --threads {threads} {input.processed_Bam}" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			fastqc -o $QC_PATH --format bam --threads {threads} {input.processed_Bam}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools flagstat --threads {threads} {input.processed_Bam} > $QC_PATH/{wildcards.sample}.processed.samtools.txt" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			samtools flagstat --threads {threads} {input.processed_Bam} > $QC_PATH/{wildcards.sample}.processed.samtools.txt
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			#
-			if [ ! -f ./R_Script/run_spp_nodups.R ]; then
-				wget {config_utilities_Dict[SPP]} -O ./R_Script/run_spp_nodups.R
-			fi
-			#
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "Rscript ./R_Script/run_spp_nodups.R -c={input.processed_Bam} -p={threads} -savp={output.spp_phantomPeak} -speak=0 -rf > {output.spp_report}" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			Rscript ./R_Script/run_spp_nodups.R -c={input.processed_Bam} -p={threads} -savp={output.spp_phantomPeak} -speak=0 -rf > {output.spp_report}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "python ./Python_Script/bamChipQC.py -i {input.processed_Bam} -c {threads} -o {output.complexity_report}" | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			python ./Python_Script/bamChipQC.py -i {input.processed_Bam} -c {threads} -o {output.complexity_report}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			
+			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
