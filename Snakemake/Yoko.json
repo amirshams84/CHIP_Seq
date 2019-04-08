@@ -6,7 +6,7 @@
         "EXECUTION_MODE": "DEVELOPMENT",
         "INFOLINK": "https://www.mothur.org/wiki/MiSeq_SOP",
         "WORKDIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP",
-        "DATADIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/fastq/subsample_big",
+        "DATADIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/fastq/real",
     },
     "DATA":{
         "PLATFORM": "ILLUMINA",
@@ -34,8 +34,8 @@
         "BigBroadPeak": "https://raw.githubusercontent.com/kundajelab/chipseq_pipeline/master/etc/bigBroadPeak.as",
     },
     "CLSUTER_CONFIG":{
-        "PROCESSORS": 10,
-        "MEMORY": 10000
+        "PROCESSORS": 20,
+        "MEMORY": 200000
     },
     
     "PRE_PROCESS":{
@@ -43,8 +43,8 @@
         "CUTADAPT_PAIRED": "--minimum-length=3 --quality-base=33 --error-rate=0.1 --trim-n -a CTGTCTCTTATA -A CTGTCTCTTATA",
     },
     "ALIGNMENT":{
-        "BOWTIE2_SINGLE": "-k 1 ",
-        "BOWTIE2_PAIRED": "-k 1 -X2000",
+        "BOWTIE2_SINGLE": "-k 10 --mm --local",
+        "BOWTIE2_PAIRED": "-k 10 --mm --local -X2000",
         "PICARD": "VALIDATION_STRINGENCY=LENIENT ASSUME_SORT_ORDER=coordinate REMOVE_DUPLICATES=false",
         "DEEPTOOLS": "--normalizeUsing RPKM --extendReads 150"
     },
@@ -60,16 +60,16 @@
     },
     "PEAK_CALLING":{
         "mm10":{
-            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize mm --call-summits --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_NARROW_SINGLE": "--format BAM --gsize mm --call-summits --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize mm --broad --broad-cutoff 1.00e-01 --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_BROAD_SINGLE": "--format BAM --gsize mm --broad --broad-cutoff 1.00e-01 --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
+            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize mm --call-summits --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_NARROW_SINGLE": "--format BAM --gsize mm --call-summits --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize mm --broad --broad-cutoff 1.00e-01 --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_BROAD_SINGLE": "--format BAM --gsize mm --broad --broad-cutoff 1.00e-01 --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
         },
         "hg38":{
-            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize hs --call-summits --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_NARROW_SINGLE": "--format BAM --gsize hs --call-summits --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize hs --broad --broad-cutoff 1.00e-01 --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
-            "MACS2_BROAD_SINGLE": "--format BAM --gsize hs --broad --broad-cutoff 1.00e-01 --keep-dup 1 -q 1.00e-01 --verbose 3 -B --nomodel --shift 0 --extsize 150",
+            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize hs --call-summits --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_NARROW_SINGLE": "--format BAM --gsize hs --call-summits --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize hs --broad --broad-cutoff 1.00e-01 --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
+            "MACS2_BROAD_SINGLE": "--format BAM --gsize hs --broad --broad-cutoff 1.00e-01 --keep-dup all -q 1.00e-01 -B --SPMR --nomodel --shift 0 --extsize 200 --verbose 3",
         },
     },
     "SIGNAL":{
