@@ -2,24 +2,24 @@
     "GENERAL":{
         "PROJECT": "Trial_Project",
         "EXPERIMENT": "Trial_Experiment",
-        "TITLE": "YOKO",
+        "TITLE": "ENCODE",
         "EXECUTION_MODE": "DEVELOPMENT",
         "INFOLINK": "https://www.mothur.org/wiki/MiSeq_SOP",
-        "WORKDIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP",
-        "DATADIR": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/fastq/real",
+        "WORKDIR": "/data/shamsaddinisha/Test_DATA/human_Chip/Encode_Chip",
+        "DATADIR": "/data/shamsaddinisha/Test_DATA/human_Chip/Encode_Chip/fastq/ENCSR936XTK/fastq_subsampled",
     },
     "DATA":{
         "PLATFORM": "ILLUMINA",
         "FORMAT": "fastq",
         "LAYOUT": "paired",
-        "SAMPLE_DELIMITER": "_",
+        "SAMPLE_DELIMITER": "-",
         "SAMPLE_SUFFIX": "fastq.gz",
-        "GENOME": "mm10",
+        "GENOME": "hg38",
         "READ_LENGTH": "75",
     },
     
     "METADATA":{
-        "METADATA_FILE": "/data/shamsaddinisha/Test_DATA/mouse_CHIP/Metadata/sample_metadata.txt"
+        "METADATA_FILE": "/data/shamsaddinisha/Test_DATA/human_Chip/Encode_Chip/Metadata/Encode_metadata.txt"
     },
     "CONDA":{
         "CONDA_INIT": "source /data/shamsaddinisha/conda/etc/profile.d/conda.sh",
@@ -34,13 +34,13 @@
         "BigBroadPeak": "https://raw.githubusercontent.com/kundajelab/chipseq_pipeline/master/etc/bigBroadPeak.as",
     },
     "CLSUTER_CONFIG":{
-        "PROCESSORS": 20,
-        "MEMORY": 200000
+        "PROCESSORS": 10,
+        "MEMORY": 10000
     },
     
     "PRE_PROCESS":{
-        "CUTADAPT_SINGLE": "--minimum-length=3 --quality-base=33 --error-rate=0.1 --trim-n -a CTGTCTCTTATA",
-        "CUTADAPT_PAIRED": "--minimum-length=3 --quality-base=33 --error-rate=0.1 --trim-n -a CTGTCTCTTATA -A CTGTCTCTTATA",
+        "CUTADAPT_SINGLE": "--minimum-length=3 --quality-base=33 --error-rate=0.0 --trim-n -a CTGTCTCTTATA",
+        "CUTADAPT_PAIRED": "--minimum-length=3 --quality-base=33 --error-rate=0.0 --trim-n -a CTGTCTCTTATA -A CTGTCTCTTATA",
     },
     "ALIGNMENT":{
         "BOWTIE2_SINGLE": "-k 10 --mm --local",
