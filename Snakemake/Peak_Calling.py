@@ -225,22 +225,22 @@ rule Peak_Calling_Narrow:
 			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
 			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
 			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track"  | tee >(cat >&2)
+			printf "%s\\n" "building signal track using pvalue"  | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method ppois" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
 			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method ppois
-			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE
+			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
 			##
@@ -250,12 +250,11 @@ rule Peak_Calling_Narrow:
 			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 			if [ -f {output.narrowPeak_bigwig} ]; then
-				#rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.xls
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp
@@ -340,22 +339,22 @@ rule Peak_Calling_Narrow_Controlled:
 			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
 			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
 			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track"  | tee >(cat >&2)
+			printf "%s\\n" "building signal track using pvalue"  | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method ppois" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
 			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method ppois
-			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE
+			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
 			##
@@ -370,7 +369,7 @@ rule Peak_Calling_Narrow_Controlled:
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_ppois.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp
@@ -459,16 +458,16 @@ rule Peak_Calling_Broad:
 			printf "OUTPUT1: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method ppois" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
 			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method ppois
-			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE
+			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
 			##
@@ -484,7 +483,7 @@ rule Peak_Calling_Broad:
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp
@@ -575,16 +574,16 @@ rule Peak_Calling_Broad_Controlled:
 			printf "OUTPUT1: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method ppois" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
 			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method ppois
-			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE
+			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
 			##
@@ -600,7 +599,7 @@ rule Peak_Calling_Broad_Controlled:
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_ppois.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp
