@@ -44,7 +44,7 @@
     },
     "ALIGNMENT":{
         "BOWTIE2_SINGLE": "-k 10 --mm --local",
-        "BOWTIE2_PAIRED": "-k 10 --mm --local -X 250",
+        "BOWTIE2_PAIRED": "-k 10 --mm --local -X 300",
         "PICARD": "VALIDATION_STRINGENCY=LENIENT ASSUME_SORT_ORDER=coordinate REMOVE_DUPLICATES=false",
         "DEEPTOOLS": "--normalizeUsing RPKM --extendReads 150"
     },

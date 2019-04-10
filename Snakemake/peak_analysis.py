@@ -221,6 +221,9 @@ for design in design_Dict:
 	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
 	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
 	##
+	#
+	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
+	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
 	for case in design_Dict[design]["Case"]:
 		for control in design_Dict[design]["Control"]:
 			#
@@ -234,6 +237,9 @@ for design in design_Dict:
 		#
 		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
 		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
+		#
+		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}_VS_{control}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
+		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}_VS_{control}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
 # ################################### PIPELINE FLOW ############################ #
 
 
@@ -250,11 +256,11 @@ rule NarrowPeak_Overlap:
 		narrowPeak_List = get_narrowpeak,
 		pooled_narrowPeak = get_pooled_narrowpeak,
 	output:
-		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.narrowPeak.gz",
-		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.narrowPeak.gz.tbi",
-		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.narrowPeak.bb",
-		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.narrowPeak.bdg",
-		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.narrowPeak.bigwig",
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.narrowPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -267,6 +273,8 @@ rule NarrowPeak_Overlap:
 			module load ucsc/373
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
 			mkdir -p $OUT_PATH
+			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling/narrowpeak
+			mkdir -p $QC_PATH
 			#
 			if [ ! -f ./Script/bigNarrowPeak.as ]; then
 				wget {config_utilities_Dict[BigNarrowPeak]} -O ./Script/bigNarrowPeak.as
@@ -348,11 +356,11 @@ rule NarrowPeak_Controlled_Overlap:
 		narrowPeak_List = get_narrowpeak_controlled,
 		pooled_narrowPeak = get_pooled_controlled_narrowpeak,
 	output:
-		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.gz",
-		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.gz.tbi",
-		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.bb",
-		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.bdg",
-		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.bigwig",
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -438,6 +446,203 @@ rule NarrowPeak_Controlled_Overlap:
 			
 		""")
 
+rule NarrowPeak_IDR:
+	"""
+	"""
+	input:
+		narrowPeak_List = get_narrowpeak,
+		pooled_narrowPeak = get_pooled_narrowpeak,
+	output:
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.narrowPeak.bigwig",
+	priority: 996
+	threads: PROCESSORS
+	resources:
+		mem_mb = MEMORY
+	message: "NarrowPeak_IDR: {wildcards.design}|{wildcards.IDR}"
+	run:
+		shell("""
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load ucsc/373 || exit 1
+			module load idr/2.0.3 || exit 1
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
+			mkdir -p $OUT_PATH
+			#
+			if [ ! -f ./Script/bigNarrowPeak.as ]; then
+				wget {config_utilities_Dict[BigNarrowPeak]} -O ./Script/bigNarrowPeak.as
+			fi
+			#
+			AWK_COMMAND1='BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}'
+			AWK_COMMAND3='BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}'
+			AWK_COMMAND4='BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}'
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373" | tee >(cat >&2)
+			printf "%s\\n" "module load idr/2.0.3" | tee >(cat >&2)
+			printf "%s\\n" "NarrowPeak_IDR"  | tee >(cat >&2)
+			declare -a bam_List=({input.narrowPeak_List})
+			for case_index in "${{!bam_List[@]}}"
+			do
+				index=$(($case_index+1))
+				printf "INPUT%s: %s\\n" "${{index}}" "${{bam_List[$case_index]}}" | tee >(cat >&2)
+			done
+			index=$(($index+1))
+			printf "INPUT%s: %s\\n" "${{index}}" "{input.pooled_narrowPeak}" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bed_index}"  | tee >(cat >&2)
+			printf "OUTPUT3: %s\\n" "{output.narrowPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot --use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND1' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "tabix -f -p bed {output.narrowPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND3' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND4' {output.narrowPeak_bed}.edited > {output.narrowPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "cat {output.narrowPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.narrowPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i {output.narrowPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.edited" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.edited > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
+			idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
+			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose
+			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}
+			tabix -f -p bed {output.narrowPeak_bed}
+			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix
+			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}
+			awk 'BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bdg}.tmp
+			cat {output.narrowPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.narrowPeak_bdg}.uniq
+			slopBed -i {output.narrowPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.edited
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.edited > {output.narrowPeak_bdg}
+			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
+			if [ -f {output.narrowPeak_bigwig} ]; then
+				rm -rf {output.narrowPeak_bed}.tmp
+				rm -rf {output.narrowPeak_bed}.edited
+				rm -rf {output.narrowPeak_bed}.fix
+				rm -rf {output.narrowPeak_bdg}.tmp
+				rm -rf {output.narrowPeak_bdg}.uniq
+				rm -rf {output.narrowPeak_bdg}.edited
+			fi
+		""")
+
+
+rule NarrowPeak_Controlled_IDR:
+	"""
+	"""
+	input:
+		narrowPeak_List = get_narrowpeak_controlled,
+		pooled_narrowPeak = get_pooled_controlled_narrowpeak,
+	output:
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.bigwig",
+	priority: 996
+	threads: PROCESSORS
+	resources:
+		mem_mb = MEMORY
+	message: "NarrowPeak_Controlled_IDR: {wildcards.design}|{wildcards.IDR}|{wildcards.control}"
+	run:
+		shell("""
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load ucsc/373 || exit 1
+			module load idr/2.0.3 || exit 1
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
+			mkdir -p $OUT_PATH
+			#
+			if [ ! -f ./Script/bigNarrowPeak.as ]; then
+				wget {config_utilities_Dict[BigNarrowPeak]} -O ./Script/bigNarrowPeak.as
+			fi
+			#
+			AWK_COMMAND1='BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}'
+			AWK_COMMAND2='BEGIN{{FS="\\t";OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}'
+			AWK_COMMAND3='BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}'
+			AWK_COMMAND4='BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}'
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373" | tee >(cat >&2)
+			printf "%s\\n" "module load idr/2.0.3" | tee >(cat >&2)
+			printf "%s\\n" "NarrowPeak_IDR"  | tee >(cat >&2)
+			declare -a bam_List=({input.narrowPeak_List})
+			for case_index in "${{!bam_List[@]}}"
+			do
+				index=$(($case_index+1))
+				printf "INPUT%s: %s\\n" "${{index}}" "${{bam_List[$case_index]}}" | tee >(cat >&2)
+			done
+			index=$(($index+1))
+			printf "INPUT%s: %s\\n" "${{index}}" "{input.pooled_narrowPeak}" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bed_index}"  | tee >(cat >&2)
+			printf "OUTPUT3: %s\\n" "{output.narrowPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot --use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND1' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "tabix -f -p bed {output.narrowPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND3' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND4' {output.narrowPeak_bed}.edited > {output.narrowPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "cat {output.narrowPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.narrowPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i {output.narrowPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.edited" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.edited > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
+			idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
+			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose
+			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}
+			tabix -f -p bed {output.narrowPeak_bed}
+			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix
+			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}
+			awk 'BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bdg}.tmp
+			cat {output.narrowPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.narrowPeak_bdg}.uniq
+			slopBed -i {output.narrowPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.edited
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.edited > {output.narrowPeak_bdg}
+			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
+			if [ -f {output.narrowPeak_bigwig} ]; then
+				rm -rf {output.narrowPeak_bed}.tmp
+				rm -rf {output.narrowPeak_bed}.edited
+				rm -rf {output.narrowPeak_bed}.fix
+				rm -rf {output.narrowPeak_bdg}.tmp
+				rm -rf {output.narrowPeak_bdg}.uniq
+				rm -rf {output.narrowPeak_bdg}.edited
+			fi
+		""")
+
+
 
 rule BroadPeak_Overlap:
 	"""
@@ -446,11 +651,11 @@ rule BroadPeak_Overlap:
 		broadPeak_List = get_broadpeak,
 		pooled_broadPeak = get_pooled_broadpeak,
 	output:
-		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.broadPeak.gz",
-		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.broadPeak.gz.tbi",
-		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.broadPeak.bb",
-		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.broadPeak.bdg",
-		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|\\.).)*}.broadPeak.bigwig",
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_VS_.*|.*_IDR_.*|\\.).)*}.broadPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -538,6 +743,7 @@ rule BroadPeak_Overlap:
 			
 		""")
 
+
 rule BroadPeak_Controlled_Overlap:
 	"""
 	"""
@@ -545,11 +751,11 @@ rule BroadPeak_Controlled_Overlap:
 		broadPeak_List = get_broadpeak_controlled,
 		pooled_broadPeak = get_pooled_controlled_broadpeak,
 	output:
-		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.gz",
-		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.gz.tbi",
-		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.bb",
-		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.bdg",
-		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.bigwig",
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -629,6 +835,202 @@ rule BroadPeak_Controlled_Overlap:
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.edited
 				rm -rf {output.broadPeak_bed}.sorted
+				rm -rf {output.broadPeak_bed}.fix
+				rm -rf {output.broadPeak_bdg}.tmp
+				rm -rf {output.broadPeak_bdg}.uniq
+				rm -rf {output.broadPeak_bdg}.edited
+			fi
+		""")
+
+
+rule BroadPeak_IDR:
+	"""
+	"""
+	input:
+		broadPeak_List = get_broadpeak,
+		pooled_broadPeak = get_pooled_broadpeak,
+	output:
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_VS_.*|.*_OVERLAPPED_.*|\\.).)*}.broadPeak.bigwig",
+	priority: 996
+	threads: PROCESSORS
+	resources:
+		mem_mb = MEMORY
+	message: "BroadPeak_IDR: {wildcards.design}|{wildcards.IDR}"
+	run:
+		shell("""
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load ucsc/373 || exit 1
+			module load idr/2.0.3 || exit 1
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
+			mkdir -p $OUT_PATH
+			#
+			if [ ! -f ./Script/bigBroadPeak.as ]; then
+				wget {config_utilities_Dict[BigBroadPeak]} -O ./Script/bigBroadPeak.as
+			fi
+			#
+			AWK_COMMAND1='BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}'
+			AWK_COMMAND3='BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}'
+			AWK_COMMAND4='BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}'
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373" | tee >(cat >&2)
+			printf "%s\\n" "module load idr/2.0.3" | tee >(cat >&2)
+			printf "%s\\n" "BroadPeak_IDR"  | tee >(cat >&2)
+			declare -a bam_List=({input.broadPeak_List})
+			for case_index in "${{!bam_List[@]}}"
+			do
+				index=$(($case_index+1))
+				printf "INPUT%s: %s\\n" "${{index}}" "${{bam_List[$case_index]}}" | tee >(cat >&2)
+			done
+			index=$(($index+1))
+			printf "INPUT%s: %s\\n" "${{index}}" "{input.pooled_broadPeak}" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "OUTPUT2: %s\\n" "{output.broadPeak_bed_index}"  | tee >(cat >&2)
+			printf "OUTPUT3: %s\\n" "{output.broadPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot --use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND1' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND3' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND4' {output.broadPeak_bed}.edited > {output.broadPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "cat {output.broadPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.broadPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i {output.broadPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.edited" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.edited > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
+			idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
+			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose
+			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}
+			tabix -f -p bed {output.broadPeak_bed}
+			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix
+			bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
+			awk 'BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}' {output.broadPeak_bed}.edited > {output.broadPeak_bdg}.tmp
+			cat {output.broadPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.broadPeak_bdg}.uniq
+			slopBed -i {output.broadPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.edited
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.edited > {output.broadPeak_bdg}
+			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
+			if [ -f {output.broadPeak_bigwig} ]; then
+				rm -rf {output.broadPeak_bed}.tmp
+				rm -rf {output.broadPeak_bed}.edited
+				rm -rf {output.broadPeak_bed}.fix
+				rm -rf {output.broadPeak_bdg}.tmp
+				rm -rf {output.broadPeak_bdg}.uniq
+				rm -rf {output.broadPeak_bdg}.edited
+			fi
+		""")
+
+
+rule BroadPeak_Controlled_IDR:
+	"""
+	"""
+	input:
+		broadPeak_List = get_broadpeak_controlled,
+		pooled_broadPeak = get_pooled_controlled_broadpeak,
+	output:
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.bigwig",
+	priority: 996
+	threads: PROCESSORS
+	resources:
+		mem_mb = MEMORY
+	message: "BroadPeak_IDR: {wildcards.design}|{wildcards.IDR}|{wildcards.control}"
+	run:
+		shell("""
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load ucsc/373 || exit 1
+			module load idr/2.0.3 || exit 1
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
+			mkdir -p $OUT_PATH
+			#
+			if [ ! -f ./Script/bigBroadPeak.as ]; then
+				wget {config_utilities_Dict[BigBroadPeak]} -O ./Script/bigBroadPeak.as
+			fi
+			#
+			AWK_COMMAND1='BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}'
+			AWK_COMMAND3='BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}'
+			AWK_COMMAND4='BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}'
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373" | tee >(cat >&2)
+			printf "%s\\n" "module load idr/2.0.3" | tee >(cat >&2)
+			printf "%s\\n" "BroadPeak_IDR"  | tee >(cat >&2)
+			declare -a bam_List=({input.broadPeak_List})
+			for case_index in "${{!bam_List[@]}}"
+			do
+				index=$(($case_index+1))
+				printf "INPUT%s: %s\\n" "${{index}}" "${{bam_List[$case_index]}}" | tee >(cat >&2)
+			done
+			index=$(($index+1))
+			printf "INPUT%s: %s\\n" "${{index}}" "{input.pooled_broadPeak}" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "OUTPUT2: %s\\n" "{output.broadPeak_bed_index}"  | tee >(cat >&2)
+			printf "OUTPUT3: %s\\n" "{output.broadPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot --use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND1' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND3' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND4' {output.broadPeak_bed}.edited > {output.broadPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "cat {output.broadPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.broadPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i {output.broadPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.edited" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.edited > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
+			idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
+			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose
+			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}
+			tabix -f -p bed {output.broadPeak_bed}
+			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix
+			bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.fix {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
+			awk 'BEGIN{{OFS="\\t"}} {{printf "%s\\t%d\\t%d\\t%2.3f\\n", $1,$2,$3,$5}}' {output.broadPeak_bed}.edited > {output.broadPeak_bdg}.tmp
+			cat {output.broadPeak_bdg}.tmp | sort -u -k1,1 -k2,2 -k3,3 -s > {output.broadPeak_bdg}.uniq
+			slopBed -i {output.broadPeak_bdg}.uniq -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.edited
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.edited > {output.broadPeak_bdg}
+			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
+			if [ -f {output.broadPeak_bigwig} ]; then
+				rm -rf {output.broadPeak_bed}.tmp
+				rm -rf {output.broadPeak_bed}.edited
 				rm -rf {output.broadPeak_bed}.fix
 				rm -rf {output.broadPeak_bdg}.tmp
 				rm -rf {output.broadPeak_bdg}.uniq
