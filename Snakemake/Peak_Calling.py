@@ -47,7 +47,8 @@ def build_design_Dict(metadata_Dict):
 			else:
 				pass
 	return design_Dict
-# ################################### CONFIGURATION ############################## #
+
+ ################################### CONFIGURATION ############################## #
 
 # ++++++++++++++++++++++++++++++++++++
 #GENERAL
@@ -110,32 +111,33 @@ else:
 
 post_alignment_List = []
 peak_calling_List = []
+overlap_peak_List = []
 for sample, sample_Dict in metadata_Dict.items():
 	#
 	#POST_ALIGNMENT
 	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam".format(design=sample_Dict["Design"], sample=sample))
 	##PEAK_CALLING
-	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.gz".format(design=sample_Dict["Design"], sample=sample))
-	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.gz".format(design=sample_Dict["Design"], sample=sample))
-
+	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.gz".format(design=sample_Dict["Design"], sample=sample))
+	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.gz".format(design=sample_Dict["Design"], sample=sample))
 
 for design in design_Dict:
 	##POOLING
 	post_alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{pooled_case}.processed.bam".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 	##PEAK_CALLING
-	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{pooled_case}.narrowPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
-	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{pooled_case}.broadPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
+	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{pooled_case}.narrowPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
+	peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{pooled_case}.broadPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 	##
 	for case in design_Dict[design]["Case"]:
 		for control in design_Dict[design]["Control"]:
 			#
-			peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.gz".format(design=design, case=case, control=control))
-			peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.gz".format(design=design, case=case, control=control))
+			peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.gz".format(design=design, case=case, control=control))
+			peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.gz".format(design=design, case=case, control=control))
 	##
 	for control in design_Dict[design]["Control"]:
 		#
-		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{pooled_case}_VS_{control}.narrowPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
-		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{pooled_case}_VS_{control}.broadPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
+		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{pooled_case}_VS_{control}.narrowPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
+		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{pooled_case}_VS_{control}.broadPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
+		
 
 # ################################### PIPELINE FLOW ############################ #
 
@@ -143,6 +145,7 @@ for design in design_Dict:
 rule End_Point:
 	input:
 		peak_calling_List
+
 # ################################### PIPELINE RULES ########################## #
 
 #+++++++++++++++++++++++++++++
@@ -154,11 +157,11 @@ rule Peak_Calling_Narrow:
 		processed_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
 		processed_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
 	output:
-		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.gz",
-		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.gz.tbi",
-		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.bb",
-		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.bdg",
-		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.narrowPeak.bigwig",
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bigwig",
 		
 	priority: 996
 	threads: PROCESSORS
@@ -174,7 +177,7 @@ rule Peak_Calling_Narrow:
 			module load ucsc/373
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
-			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
 			mkdir -p $OUT_PATH
 			#
 			if [ ! -f ./Script/bigNarrowPeak.as ]; then
@@ -269,11 +272,11 @@ rule Peak_Calling_Narrow_Controlled:
 		processed_control_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{control}.processed.bam",
 		processed_control_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{control}.processed.bam.bai",
 	output:
-		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.gz",
-		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.gz.tbi",
-		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.bb",
-		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.bdg",
-		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.narrowPeak.bigwig",
+		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.gz",
+		narrowPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.gz.tbi",
+		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.bb",
+		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.bdg",
+		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -286,9 +289,7 @@ rule Peak_Calling_Narrow_Controlled:
 			module load bedtools/2.27.1
 			module load macs/2.1.2
 			module load ucsc/373
-			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
-			mkdir -p $QC_PATH
-			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak/
 			mkdir -p $OUT_PATH
 			#
 			if [ ! -f ./Script/bigNarrowPeak.as ]; then
@@ -382,11 +383,11 @@ rule Peak_Calling_Broad:
 		processed_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
 		processed_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
 	output:
-		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.gz",
-		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.gz.tbi",
-		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.bb",
-		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.bdg",
-		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{sample}.broadPeak.bigwig",
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{sample}.broadPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -401,7 +402,7 @@ rule Peak_Calling_Broad:
 			module load ucsc/373
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
-			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
 			mkdir -p $OUT_PATH
 			#
 			if [ ! -f ./Script/bigBroadPeak.as ]; then
@@ -430,7 +431,7 @@ rule Peak_Calling_Broad:
 			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}"  | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
 			printf "%s\\n" "awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+4 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
@@ -440,7 +441,7 @@ rule Peak_Calling_Broad:
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
 			awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
-			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
+			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
 			##
 			#
 			end_time="$(date -u +%s)"
@@ -498,11 +499,11 @@ rule Peak_Calling_Broad_Controlled:
 		processed_control_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{control}.processed.bam",
 		processed_control_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{control}.processed.bam.bai",
 	output:
-		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.gz",
-		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.gz.tbi",
-		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.bb",
-		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.bdg",
-		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/{case}_VS_{control}.broadPeak.bigwig",
+		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.gz",
+		broadPeak_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.gz.tbi",
+		broadPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.bb",
+		broadPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.bdg",
+		broadPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{case}_VS_{control}.broadPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
 	resources:
@@ -517,7 +518,7 @@ rule Peak_Calling_Broad_Controlled:
 			module load ucsc/373
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
-			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
 			mkdir -p $OUT_PATH
 			#
 			if [ ! -f ./Script/bigBroadPeak.as ]; then
@@ -546,7 +547,7 @@ rule Peak_Calling_Broad_Controlled:
 			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}"  | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
 			printf "%s\\n" "awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+4 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
@@ -556,7 +557,7 @@ rule Peak_Calling_Broad_Controlled:
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
 			awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
-			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
+			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
 			##
 			#
 			end_time="$(date -u +%s)"
@@ -606,3 +607,4 @@ rule Peak_Calling_Broad_Controlled:
 
 			fi
 		""")
+

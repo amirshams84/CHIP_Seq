@@ -182,7 +182,7 @@ rule Post_Alignment:
 			start_time="$(date -u +%s)"
 			#
 			##
-			samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt
+			samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '{CHROMOSOME_FILTER_PROCESS}' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt
 			bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt
 			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.blk.filt -o {output.processed_bam}.tmp
 			samtools index -@ {threads} -b {output.processed_bam}.tmp

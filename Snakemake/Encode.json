@@ -31,7 +31,7 @@
     "UTILITIES":{
         "SPP": "https://raw.githubusercontent.com/shenlab-sinai/chip-seq_preprocess/master/bin/run_spp_nodups.R",
         "BigNarrowPeak": "http://genome.ucsc.edu/goldenPath/help/examples/bigNarrowPeak.as",
-        "BigBroadPeak": "https://raw.githubusercontent.com/kundajelab/chipseq_pipeline/master/etc/bigBroadPeak.as",
+        "BigBroadPeak": "https://raw.githubusercontent.com/kundajelab/chipseq_pipeline/master/etc/broadPeak.as",
     },
     "CLSUTER_CONFIG":{
         "PROCESSORS": 10,
