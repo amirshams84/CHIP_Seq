@@ -10,6 +10,7 @@ mkdir -p ./logs/post_alignment
 mkdir -p ./logs/peak_calling
 mkdir -p ./logs/peak_analysis
 mkdir -p ./logs/peak_annotate
+mkdir -p ./logs/build_trackhub
 
 PROCESSORS=$((SLURM_CPUS_PER_TASK - 2))
 

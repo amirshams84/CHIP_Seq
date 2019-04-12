@@ -5,6 +5,7 @@
         "TITLE": "ENCODE",
         "EXECUTION_MODE": "DEVELOPMENT",
         "INFOLINK": "https://www.mothur.org/wiki/MiSeq_SOP",
+        "HPC_DATASHARE": "https://hpc.nih.gov/~RTB",
         "WORKDIR": "/data/shamsaddinisha/Test_DATA/human_Chip/Encode_Chip",
         "DATADIR": "/data/shamsaddinisha/Test_DATA/human_Chip/Encode_Chip/fastq/ENCSR936XTK/fastq_subsampled",
     },
@@ -15,6 +16,7 @@
         "SAMPLE_DELIMITER": "-",
         "SAMPLE_SUFFIX": "fastq.gz",
         "GENOME": "hg38",
+        "SPECIES": "human",
         "READ_LENGTH": "75",
     },
     
@@ -55,7 +57,7 @@
     "POST_ALIGNMENT":{
         "FILTER_MAPQ_PAIRED": "-F 1804 -f 2 -q 30",
         "FILTER_MAPQ_SINGLE": "-F 1796 -q 30",
-        "FILTER_CHROMOSOME": "BEGIN{OFS=FS}{if ( $3 != \"chrUn\" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}",
+        "FILTER_CHROMOSOME": "BEGIN{OFS=FS}{if ( $3 != \"chrUn\" && $3 != \"chrEBV\" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}",
         "_comment": "BEGIN{OFS=FS}{if ( $3 != \"chrM\" && $3 != \"chrUn\" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}",
     },
     "PEAK_CALLING":{

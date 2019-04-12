@@ -1,0 +1,7 @@
+__default__:
+    partition: quick
+    time: 4:00
+    jobname: "Snake.{rule}.{wildcards}"
+    extra: "--gres=lscratch:100"
+    output: "./logs/build_trackhub/{rule}.{wildcards}.stdout"
+    error: "./logs/build_trackhub/{rule}.{wildcards}.stderr"
