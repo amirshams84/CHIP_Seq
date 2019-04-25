@@ -18,6 +18,7 @@
         "GENOME": "hg38",
         "SPECIES": "human",
         "READ_LENGTH": "75",
+        "FRAGMENT_LENGTH": "150",
     },
     
     "METADATA":{
@@ -62,16 +63,12 @@
     },
     "PEAK_CALLING":{
         "mm10":{
-            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize mm --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 150 --verbose 3",
-            "MACS2_NARROW_SINGLE": "--format BAM --gsize mm --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 150 --verbose 3",
-            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize mm --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 300 --verbose 3",
-            "MACS2_BROAD_SINGLE": "--format BAM --gsize mm --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 300 --verbose 3",
+            "MACS2_NARROW": "--format BED --gsize mm --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift -75 --extsize 150 --verbose 3",
+            "MACS2_BROAD": "--format BED --gsize mm --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift -75 --extsize 300 --verbose 3",
         },
         "hg38":{
-            "MACS2_NARROW_PAIRED": "--format BAMPE --gsize hs --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 150 --verbose 3",
-            "MACS2_NARROW_SINGLE": "--format BAM --gsize hs --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 150 --verbose 3",
-            "MACS2_BROAD_PAIRED": "--format BAMPE --gsize hs --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 300 --verbose 3",
-            "MACS2_BROAD_SINGLE": "--format BAM --gsize hs --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift 0 --extsize 300 --verbose 3",
+            "MACS2_NARROW": "--format BED --gsize hs --call-summits --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift -75 --extsize 150 --verbose 3",
+            "MACS2_BROAD": "--format BED --gsize hs --broad --broad-cutoff 5.00e-02 --keep-dup all -q 5.00e-02 -B --SPMR --nomodel --shift -75 --extsize 300 --verbose 3",
         },
     },
     "SIGNAL":{

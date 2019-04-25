@@ -1,12 +1,10 @@
-shell.executable("/bin/bash")
-shell.prefix("source /data/shamsaddinisha/conda/etc/profile.d/conda.sh")
 # ################################### INFO ###################################### #
 # Author: Amir Shams
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
 # Aim: Snakemake workflow for PreProcess
-# snakemake --snakefile PreProcess.py --configfile Yoko.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile PreProcess.py --configfile Yoko.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
+# snakemake --snakefile PreProcess.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile PreProcess.py --configfile Encode.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
 # ################################### IMPORT ##################################### #
 
 
@@ -148,7 +146,7 @@ config_pre_process_Dict = config["PRE_PROCESS"]
 
 pre_process_List = []
 for sample, sample_Dict in metadata_Dict.items():
-	pre_process_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz".format(design=sample_Dict["Design"], sample=sample))
+	pre_process_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq".format(design=sample_Dict["Design"], sample=sample))
 # ################################### PIPELINE FLOW ############################ #
 
 rule End_Point:
@@ -164,8 +162,8 @@ if LAYOUT == "paired":
 		input:
 			fastq_List = get_forward_fastq
 		output:
-			processed_fwd_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz",
-			processed_rev_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R2.processed.fastq.gz",
+			processed_fwd_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq",
+			processed_rev_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R2.processed.fastq",
 		threads: PROCESSORS
 		message: "PreProcess_Paired: {wildcards.design}|{wildcards.sample}"
 		resources:
@@ -227,13 +225,14 @@ if LAYOUT == "paired":
 					printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 					printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 				""")
+
 elif LAYOUT == "single":
 	#
 	rule PreProcess_Single:
 		input:
 			fastq_List = get_fastq
 		output:
-			processed_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz",
+			processed_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq",
 		threads: PROCESSORS
 		message: "PreProcess_Single: {wildcards.design}|{wildcards.sample}"
 		resources:

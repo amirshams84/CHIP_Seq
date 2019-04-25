@@ -98,12 +98,8 @@ config_reference_Dict = config["REFERENCE"][GENOME]
 # ++++++++++++++++++++++++++++++++++++
 #PEAK_CALLING
 config_peak_calling_Dict = config["PEAK_CALLING"][GENOME]
-if LAYOUT == "paired":
-	MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW_PAIRED"]
-	MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD_PAIRED"]
-else:
-	MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW_SINGLE"]
-	MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD_SINGLE"]
+MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW"]
+MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD"]
 # ------------------------------------
 # ++++++++++++++++++++++++++++++++++++
 #ALIGNMENT
@@ -202,6 +198,7 @@ rule IGV_Trackhub:
 			IGV_String += '''
 					<Category name="Bam">
 			'''
+			
 			for each_track in glob.glob(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/" + design + "/alignment/*.bam", recursive=True):
 				#
 				accessible_each_track = HPC_DATASHARE + each_track.split("RTB/datashare")[1]

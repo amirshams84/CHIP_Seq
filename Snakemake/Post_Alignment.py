@@ -1,12 +1,10 @@
-shell.executable("/bin/bash")
-shell.prefix("source /data/shamsaddinisha/conda/etc/profile.d/conda.sh")
 # ################################### INFO ###################################### #
 # Author: Amir Shams
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
 # Aim: Snakemake workflow for POST Alignment
-# snakemake --snakefile Post_Alignment.py --configfile Yoko.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile Post_Alignment.py --configfile Yoko.json --rulegraph | dot -Tsvg > Post_Alignment.svg
+# snakemake --snakefile Post_Alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile Post_Alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > Post_Alignment.svg
 # ################################### IMPORT ##################################### #
 
 
@@ -138,6 +136,7 @@ rule Post_Alignment:
 		bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
 		bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
 	output:
+		processed_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bed.gz",
 		processed_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
 		processed_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
 	priority: 993
@@ -169,6 +168,7 @@ rule Post_Alignment:
 			printf "INPUT2: %s\\n" "{input.bam_index}"  | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.processed_bam}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.processed_bam_index}"  | tee >(cat >&2)
+			printf "OUTPUT3: %s\\n" "{output.processed_bed}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt" | tee >(cat >&2)
 			printf "%s\\n" "bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt" | tee >(cat >&2)
@@ -177,7 +177,11 @@ rule Post_Alignment:
 			printf "%s\\n" "alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt"  | tee >(cat >&2)
 			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}" | tee >(cat >&2)
 			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}" | tee >(cat >&2)
-			printf "%s\\n" "rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen" | tee >(cat >&2)
+			printf "%s\\n" "bedtools bamtobed -i {output.processed_bam} > {output.processed_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.processed_bed}.tmp > {output.processed_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.processed_bed}.sorted > {output.processed_bed}" | tee >(cat >&2)
+			printf "%s\\n" "tabix -f -p bed {output.processed_bed}" | tee >(cat >&2)
+			printf "%s\\n" "rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen {output.processed_bed}.tmp {output.processed_bed}.sorted" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
@@ -189,7 +193,11 @@ rule Post_Alignment:
 			alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt
 			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}
 			samtools index -@ {threads} -b {output.processed_bam}
-			rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen
+			bedtools bamtobed -i {output.processed_bam} > {output.processed_bed}.tmp
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.processed_bed}.tmp > {output.processed_bed}.sorted
+			bgzip -c {output.processed_bed}.sorted > {output.processed_bed}
+			tabix -f -p bed {output.processed_bed}
+			rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen {output.processed_bed}.tmp {output.processed_bed}.sorted
 			##
 			#
 			end_time="$(date -u +%s)"

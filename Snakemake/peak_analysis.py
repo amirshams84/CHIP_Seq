@@ -189,12 +189,8 @@ config_reference_Dict = config["REFERENCE"][GENOME]
 # ++++++++++++++++++++++++++++++++++++
 #PEAK_CALLING
 config_peak_calling_Dict = config["PEAK_CALLING"][GENOME]
-if LAYOUT == "paired":
-	MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW_PAIRED"]
-	MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD_PAIRED"]
-else:
-	MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW_SINGLE"]
-	MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD_SINGLE"]
+MACS2_NARROW_PARAMETERS = config_peak_calling_Dict["MACS2_NARROW"]
+MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD"]
 # ------------------------------------
 # ################################### WILDCARDS ################################ #
 

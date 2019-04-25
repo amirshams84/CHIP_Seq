@@ -1,12 +1,10 @@
-shell.executable("/bin/bash")
-shell.prefix("source /data/shamsaddinisha/conda/etc/profile.d/conda.sh")
 # ################################### INFO ###################################### #
 # Author: Amir Shams
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
 # Aim: Snakemake workflow for Alignment
-# snakemake --snakefile Alignment.py --configfile Yoko.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile Alignment.py --configfile Yoko.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
+# snakemake --snakefile Alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile Alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
 # ################################### IMPORT ##################################### #
 
 import os
@@ -113,7 +111,7 @@ pre_process_List = []
 alignment_List = []
 for sample, sample_Dict in metadata_Dict.items():
 	#
-	pre_process_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz".format(design=sample_Dict["Design"], sample=sample))
+	pre_process_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq".format(design=sample_Dict["Design"], sample=sample))
 	#
 	alignment_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam".format(design=sample_Dict["Design"], sample=sample))
 
@@ -134,8 +132,8 @@ if LAYOUT == "paired":
 		"""
 		"""
 		input:
-			processed_fwd_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz",
-			processed_rev_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R2.processed.fastq.gz",
+			processed_fwd_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq",
+			processed_rev_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R2.processed.fastq",
 		output:
 			bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
 			bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
@@ -146,7 +144,7 @@ if LAYOUT == "paired":
 		message: "Alignment_Paired: {wildcards.design}|{wildcards.sample}"
 		run:
 			each_fastq_basename = os.path.basename(input.processed_fwd_fastq)
-			each_fastq_begining = re.sub(".R1.processed.fastq.gz", "", each_fastq_basename)
+			each_fastq_begining = re.sub(".R1.processed.fastq", "", each_fastq_basename)
 			shell("""
 				#
 				module load bowtie/2-2.3.5
@@ -191,7 +189,7 @@ elif LAYOUT == "single":
 		"""
 		"""
 		input:
-			processed_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq.gz",
+			processed_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq",
 		output:
 			bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
 			bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
@@ -202,7 +200,7 @@ elif LAYOUT == "single":
 		message: "Alignment_Single: {wildcards.design}|{wildcards.sample}"
 		run:
 			each_fastq_basename = os.path.basename(input.processed_fastq)
-			each_fastq_begining = re.sub(".R1.processed.fastq.gz", "", each_fastq_basename)
+			each_fastq_begining = re.sub(".R1.processed.fastq", "", each_fastq_basename)
 			shell("""
 				#
 				module load bowtie/2-2.3.5
