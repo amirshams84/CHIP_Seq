@@ -2,9 +2,9 @@
 # Author: Amir Shams
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
-# Aim: Snakemake workflow for POST Alignment
-# snakemake --snakefile Post_Alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile Post_Alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > Post_Alignment.svg
+# Aim: Snakemake workflow for POST post_alignment
+# snakemake --snakefile post_alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile post_alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > post_alignment.svg
 # ################################### IMPORT ##################################### #
 
 

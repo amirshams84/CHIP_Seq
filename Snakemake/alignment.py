@@ -2,9 +2,9 @@
 # Author: Amir Shams
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
-# Aim: Snakemake workflow for Alignment
-# snakemake --snakefile Alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile Alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
+# Aim: Snakemake workflow for alignment
+# snakemake --snakefile alignment.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile alignment.py --configfile Encode.json --rulegraph | dot -Tsvg > CHIP_Seq.svg
 # ################################### IMPORT ##################################### #
 
 import os

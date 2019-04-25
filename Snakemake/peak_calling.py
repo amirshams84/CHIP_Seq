@@ -3,8 +3,8 @@
 # Date: Mar-29-2019
 # Email: amir.shams84@gmail.com
 # Aim: Snakemake workflow for Peak Calling
-# snakemake --snakefile Peak_Calling.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
-# snakemake --snakefile Peak_Calling.py --configfile Encode.json --rulegraph | dot -Tsvg > Peak_Calling.svg
+# snakemake --snakefile peak_calling.py --configfile Encode.json --cores=50 -j 10 --local-cores=10
+# snakemake --snakefile peak_calling.py --configfile Encode.json --rulegraph | dot -Tsvg > peak_calling.svg
 # ################################### IMPORT ##################################### #
 
 
