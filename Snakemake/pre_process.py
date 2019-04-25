@@ -149,6 +149,7 @@ for sample, sample_Dict in metadata_Dict.items():
 	pre_process_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq".format(design=sample_Dict["Design"], sample=sample))
 # ################################### PIPELINE FLOW ############################ #
 
+
 rule End_Point:
 	input:
 		pre_process_List
@@ -156,7 +157,7 @@ rule End_Point:
 
 if LAYOUT == "paired":
 	#
-	rule PreProcess_Paired:
+	rule Pre_Process_Paired:
 		"""
 		"""
 		input:
@@ -165,7 +166,7 @@ if LAYOUT == "paired":
 			processed_fwd_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R1.processed.fastq",
 			processed_rev_fastq = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/pre_process/{sample}.R2.processed.fastq",
 		threads: PROCESSORS
-		message: "PreProcess_Paired: {wildcards.design}|{wildcards.sample}"
+		message: "Pre_Process_Paired: {wildcards.design}|{wildcards.sample}"
 		resources:
 			mem_mb = MEMORY
 		run:
@@ -176,59 +177,99 @@ if LAYOUT == "paired":
 				each_fastq_begining = re.sub("." + SAMPLE_SUFFIX, "", each_fastq_basename)
 				shell("""
 					#
-					module load cutadapt/2.1
 					QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/pre_process
 					mkdir -p $QC_PATH
 					#
 					printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-					printf "%s\\n" "CUTADAPT2.1"  | tee >(cat >&2)
+					printf "%s\\n" "cutadapt/2.1"  | tee >(cat >&2)
+					printf "%s\\n" "fastqc/0.11.8"  | tee >(cat >&2)
 					printf "%s\\n" "Removing low complexity, remnant adapter and short reads."  | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "INPUT1: %s\\n" "{each_fastq}"  | tee >(cat >&2)
 					printf "INPUT2: %s\\n" "{each_fastq_reverse}"  | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "OUTPUT1: %s\\n" "{output.processed_fwd_fastq}.tmp"  | tee >(cat >&2)
 					printf "OUTPUT2: %s\\n" "{output.processed_rev_fastq}.tmp"  | tee >(cat >&2)
 					printf "OUTPUT3: %s\\n" "$QC_PATH/{each_fastq_begining}.cutadapt.txt"  | tee >(cat >&2)
+					printf "OUTPUT4: %s\\n" "{output.processed_fwd_fastq}"  | tee >(cat >&2)
+					printf "OUTPUT5: %s\\n" "{output.processed_rev_fastq}"  | tee >(cat >&2)
 					printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 					printf "%s\\n" "cutadapt {config_pre_process_Dict[CUTADAPT_PAIRED]} --cores={threads} --output={output.processed_fwd_fastq}.tmp --paired-output={output.processed_rev_fastq}.tmp {each_fastq} {each_fastq_reverse} > $QC_PATH/{each_fastq_begining}.cutadapt.txt" | tee >(cat >&2)
-					printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-					start_time="$(date -u +%s)"
-					#
-					##
-					cutadapt {config_pre_process_Dict[CUTADAPT_PAIRED]} --cores={threads} --output={output.processed_fwd_fastq}.tmp --paired-output={output.processed_rev_fastq}.tmp {each_fastq} {each_fastq_reverse} > $QC_PATH/{each_fastq_begining}.cutadapt.txt
-					##
-					#
-					end_time="$(date -u +%s)"
-					printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-					printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-					printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
-					printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-					printf "%s\\n" "CAT"  | tee >(cat >&2)
-					printf "%s\\n" "Aggregating processed reads from technical replicates into single sample"  | tee >(cat >&2)
-					printf "INPUT1: %s\\n" "{output.processed_fwd_fastq}.tmp"  | tee >(cat >&2)
-					printf "INPUT2: %s\\n" "{output.processed_rev_fastq}.tmp"  | tee >(cat >&2)
-					printf "OUTPUT1: %s\\n" "{output.processed_fwd_fastq}"  | tee >(cat >&2)
-					printf "OUTPUT2: %s\\n" "{output.processed_rev_fastq}"  | tee >(cat >&2)
-					printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "%s\\n" "cat {output.processed_fwd_fastq}.tmp >> {output.processed_fwd_fastq}" | tee >(cat >&2)
 					printf "%s\\n" "cat {output.processed_rev_fastq}.tmp >> {output.processed_rev_fastq}" | tee >(cat >&2)
+					printf "%s\\n" "rm {output.processed_fwd_fastq}.tmp {output.processed_rev_fastq}.tmp" | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
+					printf "%s\\n" "fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq}" | tee >(cat >&2)
+					printf "%s\\n" "fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq_reverse}" | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					start_time="$(date -u +%s)"
 					#
 					##
+					module load cutadapt/2.1 || exit 1
+					module load fastqc/0.11.8 || exit 1
+					
+					cutadapt {config_pre_process_Dict[CUTADAPT_PAIRED]} --cores={threads} --output={output.processed_fwd_fastq}.tmp --paired-output={output.processed_rev_fastq}.tmp {each_fastq} {each_fastq_reverse} > $QC_PATH/{each_fastq_begining}.cutadapt.txt
+					
 					cat {output.processed_fwd_fastq}.tmp >> {output.processed_fwd_fastq}
 					cat {output.processed_rev_fastq}.tmp >> {output.processed_rev_fastq}
 					rm {output.processed_fwd_fastq}.tmp {output.processed_rev_fastq}.tmp
+					
+					fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq}
+					fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq_reverse}
 					##
 					#
 					end_time="$(date -u +%s)"
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+					printf "%s\\n" "#" | tee >(cat >&2)
 					printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 					printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 				""")
+			else:
+				pass
+
+			shell("""
+				#
+				QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/pre_process
+				mkdir -p $QC_PATH
+				#
+				printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+				printf "%s\\n" "fastqc/0.11.8"  | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "INPUT1: %s\\n" "{output.processed_fwd_fastq}"  | tee >(cat >&2)
+				printf "INPUT2: %s\\n" "{output.processed_rev_fastq}"  | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "OUTPUT1: %s\\n" "$QC_PATH/{wildcards.sample}.R1_fastqc.html"  | tee >(cat >&2)
+				printf "OUTPUT2: %s\\n" "$QC_PATH/{wildcards.sample}.R2_fastqc.html"  | tee >(cat >&2)
+				printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+				printf "%s\\n" "fastqc -o $QC_PATH -f fastq --threads {threads} {output.processed_fwd_fastq}" | tee >(cat >&2)
+				printf "%s\\n" "fastqc -o $QC_PATH -f fastq --threads {threads} {output.processed_rev_fastq}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				start_time="$(date -u +%s)"
+				#
+				##
+				module load fastqc/0.11.8 || exit 1
+
+				fastqc -o $QC_PATH -f fastq --threads {threads} {output.processed_fwd_fastq}
+				fastqc -o $QC_PATH -f fastq --threads {threads} {output.processed_rev_fastq}
+				##
+				#
+				end_time="$(date -u +%s)"
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+				printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
+			""")
 
 elif LAYOUT == "single":
 	#
-	rule PreProcess_Single:
+	rule Pre_Process_Single:
 		input:
 			fastq_List = get_fastq
 		output:
@@ -244,22 +285,26 @@ elif LAYOUT == "single":
 				each_fastq_begining = re.sub("." + SAMPLE_SUFFIX, "", each_fastq_basename)
 				shell("""
 					module load cutadapt/2.1
+					module load fastqc/0.11.8
 					QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/pre_process
 					mkdir -p $QC_PATH
 					#
 					printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-					printf "%s\\n" "CUTADAPT2.1"  | tee >(cat >&2)
+					printf "%s\\n" "cutadapt/2.1"  | tee >(cat >&2)
+					printf "%s\\n" "fastqc/0.11.8"  | tee >(cat >&2)
 					printf "%s\\n" "Removing low complexity, remnant adapter and short reads."  | tee >(cat >&2)
 					printf "INPUT1: %s\\n" "{each_fastq}"  | tee >(cat >&2)
 					printf "OUTPUT1: %s\\n" "{output.processed_fastq}"  | tee >(cat >&2)
 					printf "OUTPUT3: %s\\n" "$QC_PATH/{each_fastq_begining}.cutadapt.txt"  | tee >(cat >&2)
 					printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 					printf "%s\\n" "cutadapt {config_pre_process_Dict[CUTADAPT_SINGLE]} --cores={threads} {each_fastq} >> {output.processed_fastq} 2> $QC_PATH/{each_fastq_begining}.cutadapt.txt"  | tee >(cat >&2)
+					printf "%s\\n" "fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq}" | tee >(cat >&2)
 					printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 					start_time="$(date -u +%s)"
 					#
 					##
 					cutadapt {config_pre_process_Dict[CUTADAPT_SINGLE]} --cores={threads} {each_fastq} >> {output.processed_fastq} 2> $QC_PATH/{each_fastq_begining}.cutadapt.txt
+					fastqc -o $QC_PATH -f fastq --threads {threads} {each_fastq}
 					##
 					#
 					end_time="$(date -u +%s)"

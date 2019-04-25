@@ -147,39 +147,71 @@ if LAYOUT == "paired":
 			each_fastq_begining = re.sub(".R1.processed.fastq", "", each_fastq_basename)
 			shell("""
 				#
-				module load bowtie/2-2.3.5
-				module load samtools/1.9
-				module load picard/2.18.27
+				module load bowtie/2-2.3.5 || exit 1
+				module load samtools/1.9 || exit 1
+				module load picard/2.18.27 || exit 1
+				module load fastqc/0.11.8 || exit 1
+				module load qualimap/2.2.1 || exit 1
+				#
 				QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/alignment
 				mkdir -p $QC_PATH
 				#
 				printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
 				printf "%s\\n" "bowtie/2-2.3.5" | tee >(cat >&2)
 				printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-				printf "%s\\n" "Align processed reads to specified genome and sort it, mark it with duplicate, index it"  | tee >(cat >&2)
+				printf "%s\\n" "picard/2.18.27" | tee >(cat >&2)
+				printf "%s\\n" "fastqc/0.11.8" | tee >(cat >&2)
+				printf "%s\\n" "qualimap/2.2.1" | tee >(cat >&2)
+				printf "%s\\n" "Alignment"  | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "INPUT1: %s\\n" "{input.processed_fwd_fastq}"  | tee >(cat >&2)
 				printf "INPUT2: %s\\n" "{input.processed_rev_fastq}"  | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "OUTPUT1: %s\\n" "{output.bam}"  | tee >(cat >&2)
 				printf "OUTPUT2: %s\\n" "{output.bam_index}"  | tee >(cat >&2)
 				printf "OUTPUT3: %s\\n" "$QC_PATH/{each_fastq_begining}.alignment.txt"  | tee >(cat >&2)
-				printf "OUTPUT3: %s\\n" "$QC_PATH/{each_fastq_begining}.picard.txt"  | tee >(cat >&2)
+				printf "OUTPUT4: %s\\n" "$QC_PATH/{each_fastq_begining}.picard.txt"  | tee >(cat >&2)
+				printf "OUTPUT5: %s\\n" "$QC_PATH/{each_fastq_begining}.samtools.txt"  | tee >(cat >&2)
 				printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 				printf "%s\\n" "bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp - " | tee >(cat >&2)
-				printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} TMP_DIR=/lscratch/$SLURM_JOBID METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "samtools index -@ {threads} -b {output.bam}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "samtools flagstat --threads {threads} {output.bam} > $QC_PATH/{each_fastq_begining}.samtools.txt" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "rm -rf {output.bam}.tmp" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "fastqc -o $QC_PATH -f bam --threads {threads} {output.bam}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "qualimap bamqc -bam {output.bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_qualimap" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				start_time="$(date -u +%s)"
 				#
 				##
 				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
+				
 				java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}
+				
 				samtools index -@ {threads} -b {output.bam}
+
+				samtools flagstat --threads {threads} {output.bam} > $QC_PATH/{each_fastq_begining}.samtools.txt
+				
 				rm -rf {output.bam}.tmp
+
+				fastqc -o $QC_PATH -f bam --threads {threads} {output.bam}
+
+				unset DISPLAY
+				qualimap bamqc -bam {output.bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_qualimap
 				##
 				#
 				end_time="$(date -u +%s)"
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 				printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 			""")
@@ -203,15 +235,21 @@ elif LAYOUT == "single":
 			each_fastq_begining = re.sub(".R1.processed.fastq", "", each_fastq_basename)
 			shell("""
 				#
-				module load bowtie/2-2.3.5
-				module load samtools/1.9
-				module load picard/2.18.27
+				module load bowtie/2-2.3.5 || exit 1
+				module load samtools/1.9 || exit 1
+				module load picard/2.18.27 || exit 1
+				module load fastqc/0.11.8 || exit 1
+				module load qualimap/2.2.1 || exit 1
+				#
 				QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/alignment
 				mkdir -p $QC_PATH
 				#
 				printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
 				printf "%s\\n" "bowtie/2-2.3.5" | tee >(cat >&2)
 				printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
+				printf "%s\\n" "picard/2.18.27" | tee >(cat >&2)
+				printf "%s\\n" "fastqc/0.11.8" | tee >(cat >&2)
+				printf "%s\\n" "qualimap/2.2.1" | tee >(cat >&2)
 				printf "%s\\n" "Align processed reads to specified genome and sort it, mark it with duplicate, index it"  | tee >(cat >&2)
 				printf "INPUT1: %s\\n" "{input.processed_fwd_fastq}"  | tee >(cat >&2)
 				printf "INPUT2: %s\\n" "{input.processed_rev_fastq}"  | tee >(cat >&2)
@@ -255,41 +293,76 @@ rule Pooling_Case_Replicates:
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load picard/2.18.27
+			module load bowtie/2-2.3.5 || exit 1
+			module load samtools/1.9 || exit 1
+			module load picard/2.18.27 || exit 1
+			module load fastqc/0.11.8 || exit 1
+			module load qualimap/2.2.1 || exit 1
+			#
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/alignment
 			mkdir -p $QC_PATH
 			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "bowtie/2-2.3.5" | tee >(cat >&2)
 			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
+			printf "%s\\n" "picard/2.18.27" | tee >(cat >&2)
+			printf "%s\\n" "fastqc/0.11.8" | tee >(cat >&2)
+			printf "%s\\n" "qualimap/2.2.1" | tee >(cat >&2)
 			printf "%s\\n" "Merging Biological replicates bam files into single pooled sample, sort mark duplicates, and index"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			declare -a bam_List=({input.bam_List})
 			for case_index in "${{!bam_List[@]}}"
 			do
 				index=$(($case_index+1))
 				printf "INPUT%s: %s\\n" "${{index}}:" "${{bam_List[$case_index]}}" | tee >(cat >&2)
 			done
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.pooled_bam}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.pooled_bam_index}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "samtools merge --threads {threads} {output.pooled_bam} {input.bam_List}" | tee >(cat >&2)
+			printf "%s\\n" "samtools merge --threads {threads} {output.pooled_bam}.unsorted {input.bam_List}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted" | tee >(cat >&2)
-			printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.pooled_bam}.sorted OUTPUT={output.pooled_bam} METRICS_FILE=$QC_PATH/{wildcards.pooled_case}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.pooled_bam}.sorted OUTPUT={output.pooled_bam} TMP_DIR=/lscratch/$SLURM_JOBID METRICS_FILE=$QC_PATH/{wildcards.pooled_case}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "samtools index -@ {threads} {output.pooled_bam}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "rm -rf {output.pooled_bam}.unsorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "samtools flagstat --threads {threads} {output.pooled_bam} > $QC_PATH/{wildcards.pooled_case}.samtools.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "fastqc -o $QC_PATH -f bam --threads {threads} {output.pooled_bam}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "qualimap bamqc -bam {output.pooled_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.pooled_case}_qualimap" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
 			samtools merge --threads {threads} {output.pooled_bam}.unsorted {input.bam_List}
+			
 			samtools sort --threads {threads} -m 2G -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted
+			
 			java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.pooled_bam}.sorted OUTPUT={output.pooled_bam} METRICS_FILE=$QC_PATH/{wildcards.pooled_case}.picard.txt {config_alignment_Dict[PICARD]}
+			
 			samtools index -@ {threads} {output.pooled_bam}
+			
 			rm -rf {output.pooled_bam}.unsorted {output.pooled_bam}.sorted
+
+			samtools flagstat --threads {threads} {output.pooled_bam} > $QC_PATH/{wildcards.pooled_case}.samtools.txt
+
+			fastqc -o $QC_PATH -f bam --threads {threads} {output.pooled_bam}
+
+			unset DISPLAY
+			qualimap bamqc -bam {output.pooled_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.pooled_case}_qualimap
 			##
 			#
 			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
