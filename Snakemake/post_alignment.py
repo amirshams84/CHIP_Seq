@@ -136,20 +136,29 @@ rule Post_Alignment:
 		bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam",
 		bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/alignment/{sample}.bam.bai",
 	output:
-		processed_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bed.gz",
 		processed_bam = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam",
 		processed_bam_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bam.bai",
+		processed_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bed.gz",
+		processed_bed_index = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bed.gz.tbi",
+		processed_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bb",
+		processed_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/post_alignment/{sample}.processed.bigwig",
 	priority: 993
 	threads: PROCESSORS
+	message: "Post_Alignment: {wildcards.design}|{wildcards.sample}"
 	resources:
 		mem_mb = MEMORY
-	message: "Post_Alignment: {wildcards.design}|{wildcards.sample}"
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load bedtools/2.27.1
-			module load deeptools/3.1.3
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load fastqc/0.11.8 || exit 1
+			module load qualimap/2.2.1 || exit 1
+			module load ucsc/373 || exit 1
+			#
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/post_alignment
+			mkdir -p $OUT_PATH
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/post_alignment
 			mkdir -p $QC_PATH
 			#
@@ -157,51 +166,89 @@ rule Post_Alignment:
 			if [ ! -f ./Script/{GENOME}.blacklist.bed.gz ]; then
 				wget {config_reference_Dict[BLACK_LIST]} -O ./Script/{GENOME}.blacklist.bed.gz
 			fi
-			AWK_COMMAND='{config_post_alignment_Dict[FILTER_CHROMOSOME]}'
+			#
+			AWK_COMMAND_1='BEGIN{{OFS=FS}}{{if ( $3 != "chrUn" && $3 != "chrEBV" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}}'
 			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
 			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
 			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
 			printf "%s\\n" "deeptools/3.1.3" | tee >(cat >&2)
+			printf "%s\\n" "fastqc/0.11.8" | tee >(cat >&2)
+			printf "%s\\n" "qualimap/2.2.1" | tee >(cat >&2)
+			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
 			printf "%s\\n" "Filtering bam file, correctGC Bias, drop short alignment"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "{input.bam}"  | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "{input.bam_index}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.processed_bam}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.processed_bam_index}"  | tee >(cat >&2)
 			printf "OUTPUT3: %s\\n" "{output.processed_bed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.processed_bed_index}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '$AWK_COMMAND' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt" | tee >(cat >&2)
-			printf "%s\\n" "bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt" | tee >(cat >&2)
-			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.blk.filt -o {output.processed_bam}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}.tmp" | tee >(cat >&2)
-			printf "%s\\n" "alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt"  | tee >(cat >&2)
-			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "samtools view --threads {threads} -h -F 1804 -f 2 -q 30 {input.bam} | awk '$AWK_COMMAND_1' | samtools view --threads {threads} -Shb - > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bedtools intersect -v -abam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "samtools sort --threads {threads} -m 10G -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "rm -rf $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedtools bamtobed -i {output.processed_bam} > {output.processed_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.processed_bed}.tmp > {output.processed_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bgzip -c {output.processed_bed}.sorted > {output.processed_bed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bedToBigBed {output.processed_bed}.sorted {config_reference_Dict[CHROM_SIZE]} {output.processed_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.processed_bed}" | tee >(cat >&2)
-			printf "%s\\n" "rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen {output.processed_bed}.tmp {output.processed_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "rm -rf {output.processed_bed}.tmp {output.processed_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "samtools flagstat --threads {threads} {output.processed_bam} > $QC_PATH/{wildcards.sample}.processed.samtools.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bamCoverage --bam {output.processed_bam} --outFileName {output.processed_bigwig} --binSize 5 --normalizeUsing RPGC --extendReads 150 --outFileFormat bigwig --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "fastqc -o $QC_PATH -f bam --threads {threads} {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
-			samtools view --threads {threads} -h {FILTER_MAPQ} {input.bam} | awk -F'\\t' '{CHROMOSOME_FILTER_PROCESS}' | samtools view --threads {threads} -Shb - > {output.processed_bam}.filt
-			bedtools intersect -v -abam {output.processed_bam}.filt -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > {output.processed_bam}.blk.filt
-			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.blk.filt -o {output.processed_bam}.tmp
-			samtools index -@ {threads} -b {output.processed_bam}.tmp
-			alignmentSieve --bam {output.processed_bam}.tmp --numberOfProcessors {threads} --minFragmentLength {READ_LENGTH} --outFile {output.processed_bam}.fraglen --filterMetrics $QC_PATH/{wildcards.sample}.alignmentSieve.txt
-			samtools sort --threads {threads} -m 2G -O bam {output.processed_bam}.fraglen -o {output.processed_bam}
+			samtools view --threads {threads} -h -F 1804 -f 2 -q 30 {input.bam} | awk 'BEGIN{{OFS=FS}}{{if ( $3 != "chrUn" && $3 != "chrEBV" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}}' | samtools view --threads {threads} -Shb - > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam
+			bedtools intersect -v -abam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam
+			samtools sort --threads {threads} -m 10G -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}
 			samtools index -@ {threads} -b {output.processed_bam}
+			rm -rf $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam
+			
 			bedtools bamtobed -i {output.processed_bam} > {output.processed_bed}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.processed_bed}.tmp > {output.processed_bed}.sorted
 			bgzip -c {output.processed_bed}.sorted > {output.processed_bed}
+			bedToBigBed {output.processed_bed}.sorted {config_reference_Dict[CHROM_SIZE]} {output.processed_bigbed}
 			tabix -f -p bed {output.processed_bed}
-			rm -rf {output.processed_bam}.filt {output.processed_bam}.blk.filt {output.processed_bam}.tmp {output.processed_bam}.tmp.bai {output.processed_bam}.fraglen {output.processed_bed}.tmp {output.processed_bed}.sorted
+			rm -rf {output.processed_bed}.tmp {output.processed_bed}.sorted
+
+			bamCoverage --bam {output.processed_bam} --outFileName {output.processed_bigwig} --binSize 5 --normalizeUsing RPGC --extendReads 150 --outFileFormat bigwig --numberOfProcessors {threads} --effectiveGenomeSize {config_reference_Dict[EFFECTIVE_GENOME_SIZE]}
+
+			samtools flagstat --threads {threads} {output.processed_bam} > $QC_PATH/{wildcards.sample}.processed.samtools.txt
+			fastqc -o $QC_PATH -f bam --threads {threads} {output.processed_bam}
+			unset DISPLAY
+			qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap
 			##
 			#
 			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
+

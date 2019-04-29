@@ -160,19 +160,20 @@ rule Peak_Calling_Narrow:
 		narrowPeak_bigbed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bb",
 		narrowPeak_bdg = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bdg",
 		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{sample}.narrowPeak.bigwig",
-		
 	priority: 996
 	threads: PROCESSORS
+	message: "Peak_Calling_Narrow: {wildcards.design}|{wildcards.sample}"
 	resources:
 		mem_mb = MEMORY
-	message: "Peak_Calling_Narrow: {wildcards.design}|{wildcards.sample}"
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load bedtools/2.27.1
-			module load macs/2.1.2
-			module load ucsc/373
+			module load samtools/1.9 || exit 1
+			module load macs/2.1.2 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			#
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
@@ -182,67 +183,94 @@ rule Peak_Calling_Narrow:
 				wget {config_utilities_Dict[BigNarrowPeak]} -O ./Script/bigNarrowPeak.as
 			fi
 			#
+			AWK_COMMAND_1='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
+			#
 			sample_Name=$(basename {input.processed_bed})
 			sample_Name=${{sample_Name%.processed.bed.gz}}
 			#
-			AWK_COMMAND='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
-			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "narrow peak calling"  | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Calling Narrow"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "{input.processed_bam}"  | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "{input.processed_bam_index}"  | tee >(cat >&2)
 			printf "INPUT3: %s\\n" "{input.processed_bed}"  | tee >(cat >&2)
 			printf "INPUT4: %s\\n" "{input.processed_bed_index}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bed}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bed_index}"  | tee >(cat >&2)
 			printf "OUTPUT3: %s\\n" "{output.narrowPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT5: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "macs2 callpeak --treatment {input.processed_bed} --name ${{sample_Name}}.macs2_narrow {MACS2_NARROW_PARAMETERS} --outdir $OUT_PATH" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak > {output.narrowPeak_bed}.sorted" | tee >(cat >&2)
-			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.narrowPeak_bed}" | tee >(cat >&2)
-			printf "%s\\n" "awk '$AWK_COMMAND' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND_1' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE --pseudocount 0.00001" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2,3 {output.narrowPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2 {output.narrowPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then" | tee >(cat >&2)
+			line="\\$line"
+			printf "\\t%s\\n" "while IFS= read line; do grep -nr -m 1 --perl-regex '$line' {output.narrowPeak_bdg} | cut -d':' -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "while IFS= read line; do sed '${{line}}d' {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -f {output.narrowPeak_bigwig} ]; then" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.sorted" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
+			sample_Name=$(basename {input.processed_bed})
+			sample_Name=${{sample_Name%.processed.bed.gz}}
+
 			macs2 callpeak --treatment {input.processed_bed} --name ${{sample_Name}}.macs2_narrow {MACS2_NARROW_PARAMETERS} --outdir $OUT_PATH
 			LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak > {output.narrowPeak_bed}.sorted
 			bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}
 			tabix -f -p bed {output.narrowPeak_bed}
-			awk 'BEGIN{{OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp
+			awk 'BEGIN{{OFS=FS}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp
 			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track using Fold Enrichment"  | tee >(cat >&2)
-			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
-			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
-			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
-			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
-			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE
+
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE --pseudocount 0.00001
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			#
@@ -251,16 +279,13 @@ rule Peak_Calling_Narrow:
 			cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
 				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-				while IFS= read line; do sed -i "${{line}}d" {output.narrowPeak_bdg}; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
+				while IFS= read line; do sed "${{line}}d" {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
 			#
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
+
+			
 			if [ -f {output.narrowPeak_bigwig} ]; then
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
@@ -269,11 +294,18 @@ rule Peak_Calling_Narrow:
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
-				rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp
+				rm -rf {output.narrowPeak_bdg}.tmp
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
-
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
 
 rule Peak_Calling_Narrow_Controlled:
@@ -295,84 +327,115 @@ rule Peak_Calling_Narrow_Controlled:
 		narrowPeak_bigwig = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{case}_VS_{control}.narrowPeak.bigwig",
 	priority: 996
 	threads: PROCESSORS
+	message: "Peak_Calling_Narrow_Controlled: {wildcards.design}|{wildcards.case}_VS_{wildcards.control}"
 	resources:
 		mem_mb = MEMORY
-	message: "Peak_Calling_Narrow_Controlled: {wildcards.design}|{wildcards.case}_VS_{wildcards.control}"
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load bedtools/2.27.1
-			module load macs/2.1.2
-			module load ucsc/373
-			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak/
+			module load samtools/1.9 || exit 1
+			module load macs/2.1.2 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			#
+			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
+			mkdir -p $QC_PATH
+			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/narrowpeak
 			mkdir -p $OUT_PATH
 			#
 			if [ ! -f ./Script/bigNarrowPeak.as ]; then
 				wget {config_utilities_Dict[BigNarrowPeak]} -O ./Script/bigNarrowPeak.as
 			fi
 			#
+			AWK_COMMAND_1='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
+			#
 			sample_Name=$(basename {output.narrowPeak_bed})
 			sample_Name=${{sample_Name%.narrowPeak.gz}}
 			#
-			AWK_COMMAND='BEGIN{{OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}'
-			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "narrow peak calling"  | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Calling Narrow"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "{input.processed_case_bam}"  | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "{input.processed_control_bam}"  | tee >(cat >&2)
 			printf "INPUT3: %s\\n" "{input.processed_case_bed}"  | tee >(cat >&2)
 			printf "INPUT4: %s\\n" "{input.processed_control_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bed}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bed_index}"  | tee >(cat >&2)
 			printf "OUTPUT3: %s\\n" "{output.narrowPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT5: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "macs2 callpeak --treatment {input.processed_case_bed} --control {input.processed_control_bed} --name ${{sample_Name}}.macs2_narrow {MACS2_NARROW_PARAMETERS} --outdir $OUT_PATH" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak > {output.narrowPeak_bed}.sorted" | tee >(cat >&2)
-			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.narrowPeak_bed}" | tee >(cat >&2)
-			printf "%s\\n" "awk '$AWK_COMMAND' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND_1' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE --pseudocount 0.00001" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2,3 {output.narrowPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2 {output.narrowPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then" | tee >(cat >&2)
+			line="\\$line"
+			printf "\\t%s\\n" "while IFS= read line; do grep -nr -m 1 --perl-regex '$line' {output.narrowPeak_bdg} | cut -d':' -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "while IFS= read line; do sed '${{line}}d' {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -f {output.narrowPeak_bigwig} ]; then" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.sorted" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
+			sample_Name=$(basename {output.narrowPeak_bed})
+			sample_Name=${{sample_Name%.narrowPeak.gz}}
+
 			macs2 callpeak --treatment {input.processed_case_bed} --control {input.processed_control_bed} --name ${{sample_Name}}.macs2_narrow {MACS2_NARROW_PARAMETERS} --outdir $OUT_PATH
 			LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak > {output.narrowPeak_bed}.sorted
 			bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}
 			tabix -f -p bed {output.narrowPeak_bed}
-			awk 'BEGIN{{OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp
+			awk 'BEGIN{{OFS=FS}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp
 			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track using Fold Enrichment"  | tee >(cat >&2)
-			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg" | tee >(cat >&2)
-			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg" | tee >(cat >&2)
-			printf "OUTPUT1: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
-			printf "OUTPUT2: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp"  | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
-			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE
+
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE --pseudocount 0.00001
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			#
@@ -381,18 +444,14 @@ rule Peak_Calling_Narrow_Controlled:
 			cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
 				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-				while IFS= read line; do sed -i "${{line}}d" {output.narrowPeak_bdg}; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
+				while IFS= read line; do sed "${{line}}d" {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
 			#
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
+
+			
 			if [ -f {output.narrowPeak_bigwig} ]; then
-				#rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.xls
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg
@@ -400,12 +459,19 @@ rule Peak_Calling_Narrow_Controlled:
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
-				rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp
+				rm -rf {output.narrowPeak_bdg}.tmp
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
-
 
 rule Peak_Calling_Broad:
 	input:
@@ -427,10 +493,12 @@ rule Peak_Calling_Broad:
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load bedtools/2.27.1
-			module load macs/2.1.2
-			module load ucsc/373
+			module load samtools/1.9 || exit 1
+			module load macs/2.1.2 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			#
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
@@ -440,67 +508,95 @@ rule Peak_Calling_Broad:
 				wget {config_utilities_Dict[BigBroadPeak]} -O ./Script/bigBroadPeak.as
 			fi
 			#
+			#
+			AWK_COMMAND_1='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
+			#
 			sample_Name=$(basename {input.processed_bed})
 			sample_Name=${{sample_Name%.processed.bed.gz}}
 			#
-			AWK_COMMAND='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
-			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "Broad peak calling"  | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Calling Broad"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "{input.processed_bam}"  | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "{input.processed_bam_index}"  | tee >(cat >&2)
 			printf "INPUT3: %s\\n" "{input.processed_bed}"  | tee >(cat >&2)
 			printf "INPUT4: %s\\n" "{input.processed_bed_index}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.broadPeak_bed}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.broadPeak_bed_index}"  | tee >(cat >&2)
 			printf "OUTPUT3: %s\\n" "{output.broadPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT5: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "macs2 callpeak --treatment {input.processed_bed} --name ${{sample_Name}}.macs2_broad {MACS2_BROAD_PARAMETERS} --outdir $OUT_PATH" | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.narrowPeak > {output.broadPeak_bed}.sorted" | tee >(cat >&2)
-			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak > {output.broadPeak_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
-			printf "%s\\n" "awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND_1' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE --pseudocount 0.00001" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2,3 {output.broadPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2 {output.broadPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then" | tee >(cat >&2)
+			line="\\$line"
+			printf "\\t%s\\n" "while IFS= read line; do grep -nr -m 1 --perl-regex '$line' {output.broadPeak_bdg} | cut -d':' -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "while IFS= read line; do sed '${{line}}d' {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -f {output.broadPeak_bigwig} ]; then" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.broadPeak_bed}.sorted" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
+			sample_Name=$(basename {input.processed_bed})
+			sample_Name=${{sample_Name%.processed.bed.gz}}
+
 			macs2 callpeak --treatment {input.processed_bed} --name ${{sample_Name}}.macs2_broad {MACS2_BROAD_PARAMETERS} --outdir $OUT_PATH
 			LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak > {output.broadPeak_bed}.sorted
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
-			awk 'BEGIN{{OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
+			awk 'BEGIN{{OFS=FS}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
 			bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track"  | tee >(cat >&2)
-			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg" | tee >(cat >&2)
-			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg" | tee >(cat >&2)
-			printf "OUTPUT1: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
-			printf "OUTPUT2: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
-			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE
+
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE --pseudocount 0.00001
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			#
@@ -509,31 +605,33 @@ rule Peak_Calling_Broad:
 			cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
 				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-				while IFS= read line; do sed -i "${{line}}d" {output.broadPeak_bdg}; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
+				while IFS= read line; do sed "${{line}}d" {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
 			fi
 			#
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
+
+			
 			if [ -f {output.broadPeak_bigwig} ]; then
-				#rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.xls
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.gappedPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
-				rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp
+				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
-
 			fi
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
 
 rule Peak_Calling_Broad_Controlled:
@@ -561,10 +659,12 @@ rule Peak_Calling_Broad_Controlled:
 	run:
 		shell("""
 			#
-			module load samtools/1.9
-			module load bedtools/2.27.1
-			module load macs/2.1.2
-			module load ucsc/373
+			module load samtools/1.9 || exit 1
+			module load macs/2.1.2 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			#
 			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_calling
 			mkdir -p $QC_PATH
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_calling/broadpeak
@@ -574,67 +674,95 @@ rule Peak_Calling_Broad_Controlled:
 				wget {config_utilities_Dict[BigBroadPeak]} -O ./Script/bigBroadPeak.as
 			fi
 			#
+			#
+			AWK_COMMAND_1='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
+			#
 			sample_Name=$(basename {output.broadPeak_bed})
 			sample_Name=${{sample_Name%.broadPeak.gz}}
 			#
-			AWK_COMMAND='BEGIN{{OFS="\\t"}}{{if ($5>1000) $5=1000; print $0}}'
-			#
 			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "Broad peak calling"  | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Calling Broad"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "INPUT1: %s\\n" "{input.processed_case_bam}"  | tee >(cat >&2)
 			printf "INPUT2: %s\\n" "{input.processed_control_bam}"  | tee >(cat >&2)
-			printf "INPUT1: %s\\n" "{input.processed_case_bed}"  | tee >(cat >&2)
-			printf "INPUT2: %s\\n" "{input.processed_control_bed}"  | tee >(cat >&2)
+			printf "INPUT3: %s\\n" "{input.processed_case_bed}"  | tee >(cat >&2)
+			printf "INPUT4: %s\\n" "{input.processed_control_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "OUTPUT1: %s\\n" "{output.broadPeak_bed}"  | tee >(cat >&2)
 			printf "OUTPUT2: %s\\n" "{output.broadPeak_bed_index}"  | tee >(cat >&2)
 			printf "OUTPUT3: %s\\n" "{output.broadPeak_bigbed}"  | tee >(cat >&2)
+			printf "OUTPUT4: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
+			printf "OUTPUT5: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "macs2 callpeak --treatment {input.processed_case_bed} --control {input.processed_control_bed} --name ${{sample_Name}}.macs2_broad {MACS2_BROAD_PARAMETERS} --outdir $OUT_PATH" | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.narrowPeak > {output.broadPeak_bed}.sorted" | tee >(cat >&2)
-			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak > {output.broadPeak_bed}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "tabix -f -p bed {output.broadPeak_bed}" | tee >(cat >&2)
-			printf "%s\\n" "awk '$AWK_COMMAND' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "awk '$AWK_COMMAND_1' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE --pseudocount 0.00001" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2,3 {output.broadPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2 {output.broadPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then" | tee >(cat >&2)
+			line="\\$line"
+			printf "\\t%s\\n" "while IFS= read line; do grep -nr -m 1 --perl-regex '$line' {output.broadPeak_bdg} | cut -d':' -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "while IFS= read line; do sed '${{line}}d' {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "if [ -f {output.broadPeak_bigwig} ]; then" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.broadPeak_bed}.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.broadPeak_bed}.sorted" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "fi" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
 			#
 			##
+			sample_Name=$(basename {output.broadPeak_bed})
+			sample_Name=${{sample_Name%.broadPeak.gz}}
+
 			macs2 callpeak --treatment {input.processed_case_bed} --control {input.processed_control_bed} --name ${{sample_Name}}.macs2_broad {MACS2_BROAD_PARAMETERS} --outdir $OUT_PATH
 			LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak > {output.broadPeak_bed}.sorted
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
-			awk 'BEGIN{{OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
+			awk 'BEGIN{{OFS=FS}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.sorted > {output.broadPeak_bed}.tmp
 			bedToBigBed -as=./Script/bigBroadPeak.as -type=bed6+3 {output.broadPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigbed}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
-			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
-			printf "%s\\n" "samtools/1.9" | tee >(cat >&2)
-			printf "%s\\n" "bedtools/2.27.1" | tee >(cat >&2)
-			printf "%s\\n" "macs/2.1.2" | tee >(cat >&2)
-			printf "%s\\n" "ucsc/373" | tee >(cat >&2)
-			printf "%s\\n" "building signal track"  | tee >(cat >&2)
-			printf "INPUT1: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg" | tee >(cat >&2)
-			printf "INPUT2: %s\\n" "$OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg" | tee >(cat >&2)
-			printf "OUTPUT1: %s\\n" "{output.broadPeak_bdg}"  | tee >(cat >&2)
-			printf "OUTPUT2: %s\\n" "{output.broadPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE" | tee >(cat >&2)
-			printf "%s\\n" "slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp"  | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}" | tee >(cat >&2)
-			printf "%s\\n" "bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}"  | tee >(cat >&2)
-			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
-			start_time="$(date -u +%s)"
-			#
-			##
-			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE
+
+			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_broad --outdir $OUT_PATH --method FE --pseudocount 0.00001
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			#
@@ -643,30 +771,32 @@ rule Peak_Calling_Broad_Controlled:
 			cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
 				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-				while IFS= read line; do sed -i "${{line}}d" {output.broadPeak_bdg}; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
+				while IFS= read line; do sed "${{line}}d" {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
 			fi
 			#
+			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
-			##
-			#
-			end_time="$(date -u +%s)"
-			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
-			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
-			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
+
+			
 			if [ -f {output.broadPeak_bigwig} ]; then
-				#rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.xls
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.gappedPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
-				rm -rf $OUT_PATH/${{sample_Name}}.broadPeak.bdg.tmp
+				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
-
 			fi
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "------------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
 
