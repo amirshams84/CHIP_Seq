@@ -156,6 +156,7 @@ rule Post_Alignment:
 			module load fastqc/0.11.8 || exit 1
 			module load qualimap/2.2.1 || exit 1
 			module load ucsc/373 || exit 1
+			module load R/3.5 || exit 1
 			#
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/post_alignment
 			mkdir -p $OUT_PATH
@@ -218,6 +219,10 @@ rule Post_Alignment:
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "python ./Python_Script/bamChipQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Rscript ./R_Script/run_spp_nodups.R -c={output.processed_bam} -odir=$QC_PATH/ -savp > $QC_PATH/{wildcards.sample}_processed_spp.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			start_time="$(date -u +%s)"
@@ -242,6 +247,10 @@ rule Post_Alignment:
 			fastqc -o $QC_PATH -f bam --threads {threads} {output.processed_bam}
 			unset DISPLAY
 			qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap
+			module load python/2.7
+			python ./Python_Script/bamChipQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_processed_PBC.txt --cores {threads}
+			module unload python/2.7
+			Rscript ./R_Script/run_spp_nodups.R -c={output.processed_bam} -odir=$QC_PATH/ -savp > $QC_PATH/{wildcards.sample}_processed_SPP.txt
 			##
 			#
 			end_time="$(date -u +%s)"

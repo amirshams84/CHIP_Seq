@@ -187,25 +187,23 @@ if LAYOUT == "paired":
 				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "qualimap bamqc -bam {output.bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_qualimap" | tee >(cat >&2)
 				printf "%s\\n" "#" | tee >(cat >&2)
+				printf "%s\\n" "python ./Python_Script/bamChipQC.py --infile {output.bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}" | tee >(cat >&2)
+				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
 				printf "%s\\n" "#" | tee >(cat >&2)
 				start_time="$(date -u +%s)"
 				#
 				##
 				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
-				
 				java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}
-				
 				samtools index -@ {threads} -b {output.bam}
 
 				samtools flagstat --threads {threads} {output.bam} > $QC_PATH/{each_fastq_begining}.samtools.txt
-				
 				rm -rf {output.bam}.tmp
-
 				fastqc -o $QC_PATH -f bam --threads {threads} {output.bam}
-
 				unset DISPLAY
 				qualimap bamqc -bam {output.bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_qualimap
+				python ./Python_Script/bamChipQC.py --infile {output.bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}
 				##
 				#
 				end_time="$(date -u +%s)"

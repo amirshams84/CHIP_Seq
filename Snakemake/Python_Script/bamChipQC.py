@@ -189,18 +189,18 @@ class bamQC(pararead.ParaReadProcessor):
             for i in range(len(temp_files)):
                 if not os.path.exists(temp_files[i] + '.npy'):
                     continue
-                # load chrom data and add to dict                
+                # load chrom data and add to dict
                 chrStats = np.load(temp_files[i] + '.npy')
                 stats = {k: stats.get(k, 0) + chrStats.item().get(k, 0) for k in set(stats) | set(chrStats.item())}
             if stats['num_pairs'] == 0:
                 total = max(1, float(stats['num_reads']))
             else:
                 total = max(1, float(stats['num_pairs']))
-            dupRate = float(stats['dups'])/total
-            NRF = float(stats['M1'])/total
+            dupRate = float(stats['dups']) / total
+            NRF = float(stats['M1']) / total
             M2 = max(1, float(stats['M2']))
-            PBC1 = float(stats['M1'])/max(1, float(stats['M_DISTINCT']))
-            PBC2 = float(stats['M1'])/float(M2)
+            PBC1 = float(stats['M1']) / max(1, float(stats['M_DISTINCT']))
+            PBC2 = float(stats['M1']) / float(M2)
             """
             try:
                 mitoReads = float(stats['mitoReads'])

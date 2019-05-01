@@ -649,7 +649,8 @@ if (! is.na(iparams$control.file)) {
 
 # Load SPP library
 library(spp)
-
+library(caTools)
+library(bitops)
 # Read ChIP tagAlign/BAM files
 cat("Reading ChIP tagAlign/BAM file",iparams$chip.file,"\n",file=stdout())
 chip.data <- read.align(ta.chip.filename)
