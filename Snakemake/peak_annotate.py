@@ -111,8 +111,9 @@ EFFECTIVE_GENOME_SIZE = config_reference_Dict["EFFECTIVE_GENOME_SIZE"]
 
 post_alignment_List = []
 peak_calling_List = []
-peak_analysis_List = []
+
 peak_annotate_List = []
+peak_overlap_List = []
 for sample, sample_Dict in metadata_Dict.items():
 	#
 	#POST_ALIGNMENT
@@ -134,15 +135,15 @@ for design in design_Dict:
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{pooled_case}/{pooled_case}.narrowPeak.homer_annotate.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{pooled_case}/{pooled_case}.broadPeak.homer_annotate.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"])))
 	#
-	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
-	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
+	peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
+	peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
 	#
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{overlapped}/{overlapped}.narrowPeak.homer_annotate.txt".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{overlapped}/{overlapped}.broadPeak.homer_annotate.txt".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"])))
 	##
 	#
-	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
-	peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
+	peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
+	peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
 	#
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{IDR}/{IDR}.narrowPeak.homer_annotate.txt".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
 	peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{IDR}/{IDR}.broadPeak.homer_annotate.txt".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"])))
@@ -163,15 +164,15 @@ for design in design_Dict:
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{pooled_case}_VS_{control}/{pooled_case}_VS_{control}.narrowPeak.homer_annotate.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{pooled_case}_VS_{control}/{pooled_case}_VS_{control}.broadPeak.homer_annotate.txt".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
 		#
-		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
-		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
+		peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped}_VS_{control}.narrowPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
+		peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped}_VS_{control}.broadPeak.gz".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
 		#
 		#
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{overlapped}_VS_{control}/{overlapped}_VS_{control}.narrowPeak.homer_annotate.txt".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{overlapped}_VS_{control}/{overlapped}_VS_{control}.broadPeak.homer_annotate.txt".format(design=design, overlapped="_OVERLAPPED_".join(design_Dict[design]["Case"]), control=control))
 		#
-		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}_VS_{control}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
-		peak_analysis_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}_VS_{control}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
+		peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR}_VS_{control}.narrowPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
+		peak_overlap_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR}_VS_{control}.broadPeak.gz".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
 		#
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{IDR}_VS_{control}/{IDR}_VS_{control}.narrowPeak.homer_annotate.txt".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
 		peak_annotate_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{IDR}_VS_{control}/{IDR}_VS_{control}.broadPeak.homer_annotate.txt".format(design=design, IDR="_IDR_".join(design_Dict[design]["Case"]), control=control))
@@ -194,9 +195,9 @@ rule Homer_NarrowPeak_Annotate:
 		narrowPeak_annotate = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/narrowpeak/{sample}/{sample}.narrowPeak.homer_annotate.txt",
 	priority: 996
 	threads: PROCESSORS
+	message: "Homer_NarrowPeak_Annotate: {wildcards.design}|{wildcards.sample}"
 	resources:
 		mem_mb = MEMORY
-	message: "Homer_NarrowPeak_Annotate: {wildcards.design}|{wildcards.sample}"
 	run:
 		bedgraph_List = []
 		if "_VS_" in wildcards.sample:
@@ -209,9 +210,58 @@ rule Homer_NarrowPeak_Annotate:
 			bedgraph_List.append(input.narrowPeak_bdg)
 
 		shell("""
-			module load homer/4.10.1
+			#
+			module load macs/2.1.2 || exit 1
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			module load homer/4.10.1 || exit 1
+			#
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_annotate/narrowpeak/{wildcards.sample}
 			mkdir -p $OUT_PATH
+			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_annotate/narrowpeak/
+			mkdir -p $QC_PATH
+			#
+			homer_annotate_file=$OUT_PATH/annotate.txt
+			homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load homer/4.10.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Annotate Narrow"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "INPUT1: %s\\n" "{input.narrowPeak_bed}"  | tee >(cat >&2)
+			printf "INPUT2: %s\\n" "{input.narrowPeak_bdg}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.narrowPeak_annotate}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "gunzip < {input.narrowPeak_bed} > $OUT_PATH/{wildcards.sample}.narrowPeak.bed" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "homer_annotate_file=$OUT_PATH/annotate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "annotatePeaks.pl $OUT_PATH/{wildcards.sample}.narrowPeak.bed {GENOME} -bedGraph {bedgraph_List} -gsize {EFFECTIVE_GENOME_SIZE} -go $OUT_PATH -annStats $homer_annotate_statistics_file -cpu {threads} > $homer_annotate_file" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "for file in $OUT_PATH/*.txt" | tee >(cat >&2)
+			printf "%s\\n" "do" | tee >(cat >&2)
+			printf "\\t%s\\n" "name=$(basename \\$file)" | tee >(cat >&2)
+			printf "\\t%s\\n" "name={wildcards.sample}.narrowPeak.homer_\\$name" | tee >(cat >&2)
+			printf "\\t%s\\n" "mv \\$file $OUT_PATH/\\$name" | tee >(cat >&2)
+			printf "%s\\n" "done" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
 			gunzip < {input.narrowPeak_bed} > $OUT_PATH/{wildcards.sample}.narrowPeak.bed
 			homer_annotate_file=$OUT_PATH/annotate.txt
 			homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt
@@ -222,6 +272,14 @@ rule Homer_NarrowPeak_Annotate:
 				name={wildcards.sample}.narrowPeak.homer_$name
 				mv $file $OUT_PATH/$name
 			done
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
 		processed_column_List = []
 		target_Path = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/".format(design=design)
@@ -252,9 +310,9 @@ rule Homer_BroadPeak_Annotate:
 		broadPeak_annotate = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_annotate/broadpeak/{sample}/{sample}.broadPeak.homer_annotate.txt",
 	priority: 996
 	threads: PROCESSORS
+	message: "Homer_BroadPeak_Annotate: {wildcards.design}|{wildcards.sample}"
 	resources:
 		mem_mb = MEMORY
-	message: "Homer_BroadPeak_Annotate: {wildcards.design}|{wildcards.sample}"
 	run:
 		bedgraph_List = []
 		if "_VS_" in wildcards.sample:
@@ -267,9 +325,58 @@ rule Homer_BroadPeak_Annotate:
 			bedgraph_List.append(input.broadPeak_bdg)
 
 		shell("""
-			module load homer/4.10.1
+			#
+			module load macs/2.1.2 || exit 1
+			module load samtools/1.9 || exit 1
+			module load bedtools/2.27.1 || exit 1
+			module load deeptools/3.1.3 || exit 1
+			module load ucsc/373 || exit 1
+			module load homer/4.10.1 || exit 1
+			#
 			OUT_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/peak_annotate/broadpeak/{wildcards.sample}
 			mkdir -p $OUT_PATH
+			QC_PATH={WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/report/peak_annotate/broadpeak/
+			mkdir -p $QC_PATH
+			#
+			homer_annotate_file=$OUT_PATH/annotate.txt
+			homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt
+			#
+			printf "%s\\n" "###################################- COMMANDLINE -############################" | tee >(cat >&2)
+			printf "%s\\n" "module load macs/2.1.2 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load samtools/1.9 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load bedtools/2.27.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load deeptools/3.1.3 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load ucsc/373 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "module load homer/4.10.1 || exit 1" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "Description:"  | tee >(cat >&2)
+			printf "%s\\n" "Peak Annotate Broad"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "INPUT1: %s\\n" "{input.broadPeak_bed}"  | tee >(cat >&2)
+			printf "INPUT2: %s\\n" "{input.broadPeak_bdg}"  | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "OUTPUT1: %s\\n" "{output.broadPeak_annotate}"  | tee >(cat >&2)
+			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
+			printf "%s\\n" "gunzip < {input.broadPeak_bed} > $OUT_PATH/{wildcards.sample}.broadPeak.bed" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "homer_annotate_file=$OUT_PATH/annotate.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "annotatePeaks.pl $OUT_PATH/{wildcards.sample}.broadPeak.bed {GENOME} -bedGraph {bedgraph_List} -gsize {EFFECTIVE_GENOME_SIZE} -go $OUT_PATH -annStats $homer_annotate_statistics_file -cpu {threads} > $homer_annotate_file" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "for file in $OUT_PATH/*.txt" | tee >(cat >&2)
+			printf "%s\\n" "do" | tee >(cat >&2)
+			printf "\\t%s\\n" "name=$(basename \\$file)" | tee >(cat >&2)
+			printf "\\t%s\\n" "name={wildcards.sample}.broadPeak.homer_\\$name" | tee >(cat >&2)
+			printf "\\t%s\\n" "mv \\$file $OUT_PATH/\\$name" | tee >(cat >&2)
+			printf "%s\\n" "done" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			start_time="$(date -u +%s)"
+			#
+			##
 			gunzip < {input.broadPeak_bed} > $OUT_PATH/{wildcards.sample}.broadPeak.bed
 			homer_annotate_file=$OUT_PATH/annotate.txt
 			homer_annotate_statistics_file=$OUT_PATH/annotate_statistics.txt
@@ -280,6 +387,14 @@ rule Homer_BroadPeak_Annotate:
 				name={wildcards.sample}.broadPeak.homer_$name
 				mv $file $OUT_PATH/$name
 			done
+			##
+			#
+			end_time="$(date -u +%s)"
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "%s\\n" "DONE!!!!" | tee >(cat >&2)
+			printf "%s\\n" "#" | tee >(cat >&2)
+			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
+			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
 		processed_column_List = []
 		target_Path = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/".format(design=design)

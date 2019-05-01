@@ -196,7 +196,6 @@ MACS2_BROAD_PARAMETERS = config_peak_calling_Dict["MACS2_BROAD"]
 
 post_alignment_List = []
 peak_calling_List = []
-peak_analysis_List = []
 peak_overlap_List = []
 for sample, sample_Dict in metadata_Dict.items():
 	#
