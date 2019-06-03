@@ -173,7 +173,7 @@ if LAYOUT == "paired":
 				printf "OUTPUT4: %s\\n" "$QC_PATH/{each_fastq_begining}.picard.txt"  | tee >(cat >&2)
 				printf "OUTPUT5: %s\\n" "$QC_PATH/{each_fastq_begining}.samtools.txt"  | tee >(cat >&2)
 				printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-				printf "%s\\n" "bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp - " | tee >(cat >&2)
+				printf "%s\\n" "bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads}  -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp - " | tee >(cat >&2)
 				printf "%s\\n" "#" | tee >(cat >&2)
 				printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} TMP_DIR=/lscratch/$SLURM_JOBID METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
 				printf "%s\\n" "#" | tee >(cat >&2)
@@ -194,7 +194,7 @@ if LAYOUT == "paired":
 				start_time="$(date -u +%s)"
 				#
 				##
-				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
+				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads}  -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
 				java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}
 				samtools index -@ {threads} -b {output.bam}
 
@@ -203,7 +203,9 @@ if LAYOUT == "paired":
 				fastqc -o $QC_PATH -f bam --threads {threads} {output.bam}
 				unset DISPLAY
 				qualimap bamqc -bam {output.bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_qualimap
-				python ./Python_Script/bamChipQC.py --infile {output.bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}
+				module load python/2.7
+				python ./Python_Script/bamQC.py --infile {output.bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}
+				module unload python/2.7
 				##
 				#
 				end_time="$(date -u +%s)"
@@ -256,7 +258,7 @@ elif LAYOUT == "single":
 				printf "OUTPUT3: %s\\n" "$QC_PATH/{each_fastq_begining}.alignment.txt"  | tee >(cat >&2)
 				printf "OUTPUT4: %s\\n" "$QC_PATH/{each_fastq_begining}.picard.txt"  | tee >(cat >&2)
 				printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-				printf "%s\\n" "bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -U {input.processed_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp - " | tee >(cat >&2)
+				printf "%s\\n" "bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -U {input.processed_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp - " | tee >(cat >&2)
 				printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
 				printf "%s\\n" "samtools index -@ {threads} -b {output.bam}" | tee >(cat >&2)
 				printf "%s\\n" "rm -rf {output.bam}.tmp" | tee >(cat >&2)
@@ -264,7 +266,7 @@ elif LAYOUT == "single":
 				start_time="$(date -u +%s)"
 				#
 				##
-				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -m 2G -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
+				bowtie2 {config_alignment_Dict[BOWTIE2_PAIRED]} --threads {threads} -x {config_reference_Dict[BOWTIE2_INDEX]} -1 {input.processed_fwd_fastq} -2 {input.processed_rev_fastq} 2> $QC_PATH/{each_fastq_begining}.alignment.txt | samtools sort --threads {threads} -O bam -T {WORKDIR}/{PROJECT}/{EXPERIMENT}/{TITLE}/{GENOME}/{wildcards.design}/alignment/{wildcards.sample} -o {output.bam}.tmp -
 				java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.bam}.tmp OUTPUT={output.bam} METRICS_FILE=$QC_PATH/{each_fastq_begining}.picard.txt {config_alignment_Dict[PICARD]}
 				samtools index -@ {threads} -b {output.bam}
 				rm -rf {output.bam}.tmp
@@ -320,7 +322,7 @@ rule Pooling_Case_Replicates:
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
 			printf "%s\\n" "samtools merge --threads {threads} {output.pooled_bam}.unsorted {input.bam_List}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "samtools sort --threads {threads} -m 2G -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted" | tee >(cat >&2)
+			printf "%s\\n" "samtools sort --threads {threads} -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.pooled_bam}.sorted OUTPUT={output.pooled_bam} TMP_DIR=/lscratch/$SLURM_JOBID METRICS_FILE=$QC_PATH/{wildcards.pooled_case}.picard.txt {config_alignment_Dict[PICARD]}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
@@ -341,7 +343,7 @@ rule Pooling_Case_Replicates:
 			##
 			samtools merge --threads {threads} {output.pooled_bam}.unsorted {input.bam_List}
 			
-			samtools sort --threads {threads} -m 2G -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted
+			samtools sort --threads {threads} -O bam {output.pooled_bam}.unsorted -o {output.pooled_bam}.sorted
 			
 			java -Xms10000M -Xmx10000M -XX:ParallelGCThreads={threads} -jar $PICARDJARPATH/picard.jar MarkDuplicates INPUT={output.pooled_bam}.sorted OUTPUT={output.pooled_bam} METRICS_FILE=$QC_PATH/{wildcards.pooled_case}.picard.txt {config_alignment_Dict[PICARD]}
 			

@@ -133,7 +133,6 @@ for design in design_Dict:
 		#
 		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{pooled_case}_VS_{control}.narrowPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
 		peak_calling_List.append(WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{pooled_case}_VS_{control}.broadPeak.gz".format(design=design, pooled_case="_POOLED_".join(design_Dict[design]["Case"]), control=control))
-		
 
 # ################################### PIPELINE FLOW ############################ #
 
@@ -227,20 +226,19 @@ rule Peak_Calling_Narrow:
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "cut -f1,2,3 {output.narrowPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "sort -u -k1,1 -k2,2n -k3,3n -s {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,2 {output.narrowPeak_bdg}.uniq | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
+			printf "%s\\n" "cut -f1,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "cut -f1,2 {output.narrowPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
-			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
-			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then" | tee >(cat >&2)
 			line="\\$line"
-			printf "\\t%s\\n" "while IFS= read line; do grep -nr -m 1 --perl-regex '$line' {output.narrowPeak_bdg} | cut -d':' -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
-			printf "\\t%s\\n" "while IFS= read line; do sed '${{line}}d' {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "%s\\n" "if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then" | tee >(cat >&2)
+			printf "\\t%s\\n" "cat $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt | while read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done" | tee >(cat >&2)
+			printf "\\t%s\\n" "cat $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt | while read line; do sed "${{line}}d" {output.narrowPeak_bdg}.uniq > {output.narrowPeak_bdg}.uniq.fix; done" | tee >(cat >&2)
 			printf "%s\\n" "fi" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}" | tee >(cat >&2)
-			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
+			printf "%s\\n" "LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.uniq.fix > {output.narrowPeak_bdg}.uniq.fix.sorted" | tee >(cat >&2)
+			printf "%s\\n" "bedGraphToBigWig {output.narrowPeak_bdg}.uniq.fix.sorted {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "if [ -f {output.narrowPeak_bigwig} ]; then" | tee >(cat >&2)
 			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak" | tee >(cat >&2)
@@ -250,9 +248,10 @@ rule Peak_Calling_Narrow:
 			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg" | tee >(cat >&2)
 			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.tmp" | tee >(cat >&2)
 			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bed}.sorted" | tee >(cat >&2)
-			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrowPeak.bdg.tmp" | tee >(cat >&2)
-			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt" | tee >(cat >&2)
-			printf "\\t%s\\n" "rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bdg}.tmp" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bdg}.uniq" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bdg}.uniq.fix" | tee >(cat >&2)
+			printf "\\t%s\\n" "rm -rf {output.narrowPeak_bdg}.uniq.fix.sorted" | tee >(cat >&2)
 			printf "%s\\n" "fi" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "EXECUTING...." | tee >(cat >&2)
@@ -262,30 +261,33 @@ rule Peak_Calling_Narrow:
 			##
 			sample_Name=$(basename {input.processed_bed})
 			sample_Name=${{sample_Name%.processed.bed.gz}}
-
+			#
 			macs2 callpeak --treatment {input.processed_bed} --name ${{sample_Name}}.macs2_narrow {MACS2_NARROW_PARAMETERS} --outdir $OUT_PATH
 			LC_COLLATE=C sort -k1,1 -k2,2n $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak > {output.narrowPeak_bed}.sorted
 			bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}
 			tabix -f -p bed {output.narrowPeak_bed}
 			awk 'BEGIN{{OFS=FS}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}.tmp
 			bedToBigBed -as=./Script/bigNarrowPeak.as -type=bed6+4 {output.narrowPeak_bed}.tmp {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigbed}
-
+			#
 			macs2 bdgcmp -t $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg -c $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg --o-prefix ${{sample_Name}}.macs2_narrow --outdir $OUT_PATH --method FE --pseudocount 0.00001
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			#
-			cut -f1,2,3 {output.narrowPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			cut -f1,2 {output.narrowPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
-				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-				while IFS= read line; do sed "${{line}}d" {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
-			fi
+			LC_COLLATE=C sort -u -k1,1 -k2,2n -k3,3n -s {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.uniq
+			cut -f1,2,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
+			cut -f1,2 {output.narrowPeak_bdg}.uniq | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
+			cut -f1,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 			#
-			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
-			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
-
+			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
+				cat $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt | while read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg}.uniq | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done
+				cat $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt | while read line; do sed "${{line}}d" {output.narrowPeak_bdg}.uniq > {output.narrowPeak_bdg}.uniq.fix; done
+				LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.uniq.fix > {output.narrowPeak_bdg}.uniq.fix.sorted
+				bedGraphToBigWig {output.narrowPeak_bdg}.uniq.fix.sorted {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			else
+				bedGraphToBigWig {output.narrowPeak_bdg}.uniq {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			fi
 			
+			#
 			if [ -f {output.narrowPeak_bigwig} ]; then
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
@@ -295,6 +297,9 @@ rule Peak_Calling_Narrow:
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
 				rm -rf {output.narrowPeak_bdg}.tmp
+				rm -rf {output.narrowPeak_bdg}.uniq
+				rm -rf {output.narrowPeak_bdg}.uniq.fix
+				rm -rf {output.narrowPeak_bdg}.uniq.fix.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
@@ -439,18 +444,21 @@ rule Peak_Calling_Narrow_Controlled:
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
 			#
-			cut -f1,2,3 {output.narrowPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			cut -f1,2 {output.narrowPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			cut -f1,3 {output.narrowPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
-				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
-				while IFS= read line; do sed "${{line}}d" {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
-			fi
+			LC_COLLATE=C sort -u -k1,1 -k2,2n -k3,3n -s {output.narrowPeak_bdg} > {output.narrowPeak_bdg}.uniq
+			cut -f1,2,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d > $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
+			cut -f1,2 {output.narrowPeak_bdg}.uniq | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
+			cut -f1,3 {output.narrowPeak_bdg}.uniq | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 			#
-			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.tmp > {output.narrowPeak_bdg}
-			bedGraphToBigWig {output.narrowPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
-
+			if [ -s $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt ]; then
+				cat $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt | while read line; do grep -nr -m 1 --perl-regex "$line" {output.narrowPeak_bdg}.uniq | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt; done
+				cat $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt | while read line; do sed "${{line}}d" {output.narrowPeak_bdg}.uniq > {output.narrowPeak_bdg}.uniq.fix; done
+				LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bdg}.uniq.fix > {output.narrowPeak_bdg}.uniq.fix.sorted
+				bedGraphToBigWig {output.narrowPeak_bdg}.uniq.fix.sorted {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			else
+				bedGraphToBigWig {output.narrowPeak_bdg}.uniq {config_reference_Dict[CHROM_SIZE]} {output.narrowPeak_bigwig}
+			fi
 			
+			#
 			if [ -f {output.narrowPeak_bigwig} ]; then
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
 				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
@@ -460,6 +468,9 @@ rule Peak_Calling_Narrow_Controlled:
 				rm -rf {output.narrowPeak_bed}.tmp
 				rm -rf {output.narrowPeak_bed}.sorted
 				rm -rf {output.narrowPeak_bdg}.tmp
+				rm -rf {output.narrowPeak_bdg}.uniq
+				rm -rf {output.narrowPeak_bdg}.uniq.fix
+				rm -rf {output.narrowPeak_bdg}.uniq.fix.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.narrow.duplicate_line.txt
 			fi
@@ -600,27 +611,33 @@ rule Peak_Calling_Broad:
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			#
-			cut -f1,2,3 {output.broadPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			cut -f1,2 {output.broadPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
-				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-				while IFS= read line; do sed "${{line}}d" {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
-			fi
+			LC_COLLATE=C sort -u -k1,1 -k2,2n -k3,3n -s {output.broadPeak_bdg} > {output.broadPeak_bdg}.uniq
+			cut -f1,2,3 {output.broadPeak_bdg}.uniq | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
+			cut -f1,2 {output.broadPeak_bdg}.uniq | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
+			cut -f1,3 {output.broadPeak_bdg}.uniq | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 			#
-			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
-			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
-
+			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
+				cat $OUT_PATH/${{sample_Name}}.broad.duplicate.txt | while read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg}.uniq | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done
+				cat $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt | while read line; do sed "${{line}}d" {output.broadPeak_bdg}.uniq > {output.broadPeak_bdg}.uniq.fix; done
+				LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.uniq.fix > {output.broadPeak_bdg}.uniq.fix.sorted
+				bedGraphToBigWig {output.broadPeak_bdg}.uniq.fix.sorted {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			else
+				bedGraphToBigWig {output.broadPeak_bdg}.uniq {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			fi
 			
+			#
 			if [ -f {output.broadPeak_bigwig} ]; then
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
-				rm -rf {output.broadPeak_bed}.tmp
+				rm -rf {output.broadPeak_bdg}.tmp
+				rm -rf {output.broadPeak_bdg}.uniq
+				rm -rf {output.broadPeak_bdg}.uniq.fix
+				rm -rf {output.broadPeak_bdg}.uniq.fix.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
 			fi
@@ -766,27 +783,33 @@ rule Peak_Calling_Broad_Controlled:
 			slopBed -i $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg -g {config_reference_Dict[CHROM_SIZE]} -b 0 | bedClip stdin {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bdg}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
 			#
-			cut -f1,2,3 {output.broadPeak_bdg} | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			cut -f1,2 {output.broadPeak_bdg} | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			cut -f1,3 {output.broadPeak_bdg} | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
-				while IFS= read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg} | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done< $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
-				while IFS= read line; do sed "${{line}}d" {output.broadPeak_bdg} > {output.broadPeak_bdg}.tmp; done< $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
-			fi
+			LC_COLLATE=C sort -u -k1,1 -k2,2n -k3,3n -s {output.broadPeak_bdg} > {output.broadPeak_bdg}.uniq
+			cut -f1,2,3 {output.broadPeak_bdg}.uniq | sort | uniq -d > $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
+			cut -f1,2 {output.broadPeak_bdg}.uniq | sort | uniq -d >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
+			cut -f1,3 {output.broadPeak_bdg}.uniq | sort | uniq -d | sed 's/\\t/\\t.*\\t/' >> $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 			#
-			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.tmp > {output.broadPeak_bdg}
-			bedGraphToBigWig {output.broadPeak_bdg} {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
-
+			if [ -s $OUT_PATH/${{sample_Name}}.broad.duplicate.txt ]; then
+				cat $OUT_PATH/${{sample_Name}}.broad.duplicate.txt | while read line; do grep -nr -m 1 --perl-regex "$line" {output.broadPeak_bdg}.uniq | cut -d":" -f1 >> $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt; done
+				cat $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt | while read line; do sed "${{line}}d" {output.broadPeak_bdg}.uniq > {output.broadPeak_bdg}.uniq.fix; done
+				LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bdg}.uniq.fix > {output.broadPeak_bdg}.uniq.fix.sorted
+				bedGraphToBigWig {output.broadPeak_bdg}.uniq.fix.sorted {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			else
+				bedGraphToBigWig {output.broadPeak_bdg}.uniq {config_reference_Dict[CHROM_SIZE]} {output.broadPeak_bigwig}
+			fi
 			
+			#
 			if [ -f {output.broadPeak_bigwig} ]; then
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_peaks.broadPeak
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_summits.bed
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_treat_pileup.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_control_lambda.bdg
-				rm -rf $OUT_PATH/${{sample_Name}}.macs2_broad_FE.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_peaks.narrowPeak
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_summits.bed
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_treat_pileup.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_control_lambda.bdg
+				rm -rf $OUT_PATH/${{sample_Name}}.macs2_narrow_FE.bdg
 				rm -rf {output.broadPeak_bed}.tmp
 				rm -rf {output.broadPeak_bed}.sorted
-				rm -rf {output.broadPeak_bed}.tmp
+				rm -rf {output.broadPeak_bdg}.tmp
+				rm -rf {output.broadPeak_bdg}.uniq
+				rm -rf {output.broadPeak_bdg}.uniq.fix
+				rm -rf {output.broadPeak_bdg}.uniq.fix.sorted
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate.txt
 				rm -rf $OUT_PATH/${{sample_Name}}.broad.duplicate_line.txt
 			fi

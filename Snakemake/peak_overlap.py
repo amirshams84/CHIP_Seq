@@ -94,7 +94,7 @@ def get_pooled_broadpeak(wildcards):
 	return pooled_broadPeak_List
 
 
-def get_narrowpeak_controlled(wildcards):
+def get_controlled_narrowpeak(wildcards):
 	"""
 	"""
 	narrowPeak_List = []
@@ -105,7 +105,7 @@ def get_narrowpeak_controlled(wildcards):
 	return narrowPeak_List
 
 
-def get_broadpeak_controlled(wildcards):
+def get_controlled_broadpeak(wildcards):
 	"""
 	"""
 	broadPeak_List = []
@@ -347,7 +347,7 @@ rule NarrowPeak_Overlap:
 			start_time="$(date -u +%s)"
 			#
 			##
-			intersectBed -wo -f 1E-9 -a <(zcat -f {input.pooled_narrowPeak}) -b <(zcat -f {input.narrowPeak_List}) | cut -f 1-10 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.tmp
+			intersectBed -wo -f 0.5 -a <(zcat -f {input.pooled_narrowPeak}) -b <(zcat -f {input.narrowPeak_List}) | cut -f 1-10 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.tmp
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{$4="{wildcards.overlapped}.macs2_narrowPeak_"NR}} {{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp > {output.narrowPeak_bed}.edited
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.sorted
 			bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}
@@ -383,7 +383,7 @@ rule NarrowPeak_Controlled_Overlap:
 	"""
 	"""
 	input:
-		narrowPeak_List = get_narrowpeak_controlled,
+		narrowPeak_List = get_controlled_narrowpeak,
 		pooled_narrowPeak = get_pooled_controlled_narrowpeak,
 	output:
 		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.narrowPeak.gz",
@@ -482,7 +482,7 @@ rule NarrowPeak_Controlled_Overlap:
 			start_time="$(date -u +%s)"
 			#
 			##
-			intersectBed -wo -f 1E-9 -a <(zcat -f {input.pooled_narrowPeak}) -b <(zcat -f {input.narrowPeak_List}) | cut -f 1-10 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.tmp
+			intersectBed -wo -f 0.5 -a <(zcat -f {input.pooled_narrowPeak}) -b <(zcat -f {input.narrowPeak_List}) | cut -f 1-10 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.tmp
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{$4="{wildcards.overlapped}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp > {output.narrowPeak_bed}.edited
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.sorted
 			bgzip -c {output.narrowPeak_bed}.sorted > {output.narrowPeak_bed}
@@ -512,6 +512,7 @@ rule NarrowPeak_Controlled_Overlap:
 			printf "ELAPSED TIME: %s seconds\\n" "$(($end_time-$start_time))" | tee >(cat >&2)
 			printf "%s\\n" "----------------------------------------------------------------------------" | tee >(cat >&2)
 		""")
+
 
 rule NarrowPeak_IDR:
 	"""
@@ -579,7 +580,7 @@ rule NarrowPeak_IDR:
 			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bdg}"  | tee >(cat >&2)
 			printf "OUTPUT4: %s\\n" "{output.narrowPeak_bigwig}"  | tee >(cat >&2)
 			printf "%s\\n" "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee >(cat >&2)
-			printf "%s\\n" "idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot --use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
+			printf "%s\\n" "idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.05 --plot --use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "mv {output.narrowPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_IDR.png" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
@@ -616,10 +617,18 @@ rule NarrowPeak_IDR:
 			start_time="$(date -u +%s)"
 			#
 			##
-			idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
-			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose
+			declare -a input_List=({input.narrowPeak_List})
+			idr --samples ${{input_List[@]:0:2}} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.05 --plot \
+			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --log-output-file $QC_PATH/{wildcards.IDR}_IDR.txt
 			mv {output.narrowPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_IDR.png
-			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			#
+			awk 'BEGIN{{OFS="\\t"}} $12>=1.30 {{print $0}}' {output.narrowPeak_bed}.tmp > {output.narrowPeak_bed}.filt
+			if [ -s {output.narrowPeak_bed}.filt ]; then
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.filt | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			else
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			fi
+			
 			bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}
 			tabix -f -p bed {output.narrowPeak_bed}
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix
@@ -651,7 +660,7 @@ rule NarrowPeak_Controlled_IDR:
 	"""
 	"""
 	input:
-		narrowPeak_List = get_narrowpeak_controlled,
+		narrowPeak_List = get_controlled_narrowpeak,
 		pooled_narrowPeak = get_pooled_controlled_narrowpeak,
 	output:
 		narrowPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/narrowpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.narrowPeak.gz",
@@ -751,10 +760,17 @@ rule NarrowPeak_Controlled_IDR:
 			start_time="$(date -u +%s)"
 			#
 			##
-			idr --samples {input.narrowPeak_List} --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
-			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --verbose
-			mv {output.narrowPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_IDR.png
-			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			declare -a input_List=({input.narrowPeak_List})
+			idr --samples ${{input_List[@]:0:2}}  --peak-list {input.pooled_narrowPeak} --input-file-type narrowPeak --output-file-type narrowPeak --rank signal.value --soft-idr-threshold 0.05 --plot \
+			--use-best-multisummit-IDR --input-file-type narrowPeak --peak-merge-method sum --output-file {output.narrowPeak_bed}.tmp --max-iter 10000 --log-output-file $QC_PATH/{wildcards.IDR}_VS_{wildcards.control}_IDR.txt
+			mv {output.narrowPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_VS_{wildcards.control}_IDR.png
+
+			awk 'BEGIN{{OFS="\\t"}} $12>=1.30 {{print $0}}' {output.narrowPeak_bed}.tmp > {output.narrowPeak_bed}.filt
+			if [ -s {output.narrowPeak_bed}.filt ]; then
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.filt | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			else
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_narrowPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}}' {output.narrowPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.narrowPeak_bed}.edited
+			fi
 			bgzip -c {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}
 			tabix -f -p bed {output.narrowPeak_bed}
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.narrowPeak_bed}.edited > {output.narrowPeak_bed}.fix
@@ -884,7 +900,7 @@ rule BroadPeak_Overlap:
 			start_time="$(date -u +%s)"
 			#
 			##
-			intersectBed -wo -f 1E-9 -a <(zcat -f {input.pooled_broadPeak}) -b <(zcat -f {input.broadPeak_List}) | cut -f 1-9 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.tmp
+			intersectBed -wo -f 0.5 -a <(zcat -f {input.pooled_broadPeak}) -b <(zcat -f {input.broadPeak_List}) | cut -f 1-9 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.tmp
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{$4="{wildcards.overlapped}.macs2_broadPeak_"NR}} {{print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp > {output.broadPeak_bed}.edited
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bed}.edited > {output.broadPeak_bed}.sorted
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
@@ -920,7 +936,7 @@ rule BroadPeak_Controlled_Overlap:
 	"""
 	"""
 	input:
-		broadPeak_List = get_broadpeak_controlled,
+		broadPeak_List = get_controlled_broadpeak,
 		pooled_broadPeak = get_pooled_controlled_broadpeak,
 	output:
 		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{overlapped, ((?!.*_IDR_.*|\\.).)*}_VS_{control}.broadPeak.gz",
@@ -1021,7 +1037,7 @@ rule BroadPeak_Controlled_Overlap:
 			start_time="$(date -u +%s)"
 			#
 			##
-			intersectBed -wo -f 1E-9 -a <(zcat -f {input.pooled_broadPeak}) -b <(zcat -f {input.broadPeak_List}) | cut -f 1-9 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.tmp
+			intersectBed -wo -f 0.5 -a <(zcat -f {input.pooled_broadPeak}) -b <(zcat -f {input.broadPeak_List}) | cut -f 1-9 | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.tmp
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{$4="{wildcards.overlapped}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp > {output.broadPeak_bed}.edited
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.broadPeak_bed}.edited > {output.broadPeak_bed}.sorted
 			bgzip -c {output.broadPeak_bed}.sorted > {output.broadPeak_bed}
@@ -1154,10 +1170,18 @@ rule BroadPeak_IDR:
 			start_time="$(date -u +%s)"
 			#
 			##
-			idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
-			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose
+			declare -a input_List=({input.broadPeak_List})
+			idr --samples ${{input_List[@]:0:2}} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.05 --plot \
+			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --log-output-file $QC_PATH/{wildcards.IDR}_IDR.txt
 			mv {output.broadPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_IDR.png
-			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+
+			awk 'BEGIN{{OFS="\\t"}} $12>=1.30 {{print $0}}' {output.broadPeak_bed}.tmp > {output.broadPeak_bed}.filt
+			if [ -s {output.broadPeak_bed}.filt ]; then
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.filt | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			else
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			fi
+
 			bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix
@@ -1188,7 +1212,7 @@ rule BroadPeak_Controlled_IDR:
 	"""
 	"""
 	input:
-		broadPeak_List = get_broadpeak_controlled,
+		broadPeak_List = get_controlled_broadpeak,
 		pooled_broadPeak = get_pooled_controlled_broadpeak,
 	output:
 		broadPeak_bed = WORKDIR + "/" + PROJECT + "/" + EXPERIMENT + "/" + TITLE + "/" + GENOME + "/{design}/peak_calling/broadpeak/{IDR, ((?!.*_OVERLAPPED_.*|\\.).)*}_VS_{control}.broadPeak.gz",
@@ -1287,10 +1311,18 @@ rule BroadPeak_Controlled_IDR:
 			start_time="$(date -u +%s)"
 			#
 			##
-			idr --samples {input.broadPeak_List} --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.1 --plot \
-			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --verbose
+			declare -a input_List=({input.broadPeak_List})
+			idr --samples ${{input_List[@]:0:2}}  --peak-list {input.pooled_broadPeak} --input-file-type broadPeak --output-file-type broadPeak --rank signal.value --soft-idr-threshold 0.05 --plot \
+			--use-best-multisummit-IDR --input-file-type broadPeak --peak-merge-method sum --output-file {output.broadPeak_bed}.tmp --max-iter 10000 --log-output-file $QC_PATH/{wildcards.IDR}_VS_{wildcards.control}_IDR.txt
 			mv {output.broadPeak_bed}.tmp.png $QC_PATH/{wildcards.IDR}_VS_{wildcards.control}_IDR.png
-			awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+
+			awk 'BEGIN{{OFS="\\t"}} $12>=1.30 {{print $0}}' {output.broadPeak_bed}.tmp > {output.broadPeak_bed}.filt
+			if [ -s {output.broadPeak_bed}.filt ]; then
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.filt | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			else
+				awk 'BEGIN{{OFS="\\t"}} {{$4="{wildcards.IDR}_VS_{wildcards.control}.macs2_broadPeak_"NR}} {{if ($2<0) $2=0; print $1,$2,$3,$4,$5,$6,$7,$8,$9}}' {output.broadPeak_bed}.tmp | sort | uniq | LC_COLLATE=C sort -k1,1 -k2,2n > {output.broadPeak_bed}.edited
+			fi
+
 			bgzip -c {output.broadPeak_bed}.edited > {output.broadPeak_bed}
 			tabix -f -p bed {output.broadPeak_bed}
 			awk 'BEGIN{{FS="\\t";OFS="\\t"}} {{if ($5>1000) $5=1000; print $0}}' {output.broadPeak_bed}.edited > {output.broadPeak_bed}.fix

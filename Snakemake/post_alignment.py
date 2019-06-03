@@ -193,7 +193,7 @@ rule Post_Alignment:
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "bedtools intersect -v -abam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "samtools sort --threads {threads} -m 10G -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}" | tee >(cat >&2)
+			printf "%s\\n" "samtools sort --threads {threads} -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "samtools index -@ {threads} -b {output.processed_bam}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
@@ -219,7 +219,7 @@ rule Post_Alignment:
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
-			printf "%s\\n" "python ./Python_Script/bamChipQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}" | tee >(cat >&2)
+			printf "%s\\n" "python ./Python_Script/bamQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_PBC.txt --cores {threads}" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
 			printf "%s\\n" "Rscript ./R_Script/run_spp_nodups.R -c={output.processed_bam} -odir=$QC_PATH/ -savp > $QC_PATH/{wildcards.sample}_processed_spp.txt" | tee >(cat >&2)
 			printf "%s\\n" "#" | tee >(cat >&2)
@@ -230,14 +230,18 @@ rule Post_Alignment:
 			##
 			samtools view --threads {threads} -h -F 1804 -f 2 -q 30 {input.bam} | awk 'BEGIN{{OFS=FS}}{{if ( $3 != "chrUn" && $3 != "chrEBV" && $3 !~ /chrUn/ && $3 !~ /random/ ) print $0}}' | samtools view --threads {threads} -Shb - > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam
 			bedtools intersect -v -abam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam -b <(zcat -f ./Script/{GENOME}.blacklist.bed.gz ) > $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam
-			samtools sort --threads {threads} -m 10G -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}
+			samtools sort --threads {threads} -O bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam -o {output.processed_bam}
 			samtools index -@ {threads} -b {output.processed_bam}
 			rm -rf $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.bam $OUT_PATH/{wildcards.sample}.mapped.dupfilt.chrfilt.blkfilt.bam
 			
+			#ATAC_SEQ
+			#bedtools bamtobed -i {output.processed_bam} | awk 'BEGIN {{FS="\\t"; OFS="\\t"}} {{if ($6 == "+") {{$2 = $2 + 4}} else if ($6 == "-") {{$3 = $3 - 5}} print $0}}' > {output.processed_bed}.tmp
+			#CHIP_SEQ
 			bedtools bamtobed -i {output.processed_bam} > {output.processed_bed}.tmp
 			LC_COLLATE=C sort -k1,1 -k2,2n {output.processed_bed}.tmp > {output.processed_bed}.sorted
 			bgzip -c {output.processed_bed}.sorted > {output.processed_bed}
 			bedToBigBed {output.processed_bed}.sorted {config_reference_Dict[CHROM_SIZE]} {output.processed_bigbed}
+
 			tabix -f -p bed {output.processed_bed}
 			rm -rf {output.processed_bed}.tmp {output.processed_bed}.sorted
 
@@ -247,9 +251,14 @@ rule Post_Alignment:
 			fastqc -o $QC_PATH -f bam --threads {threads} {output.processed_bam}
 			unset DISPLAY
 			qualimap bamqc -bam {output.processed_bam} -nt {threads} {config_qualimap_Dict} -outdir $QC_PATH/{wildcards.sample}_processed_qualimap
+			
 			module load python/2.7
+			#ATAC_SEQ
+			#python ./Python_Script/bamQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_processed_PBC.txt --cores {threads}
+			#CHIP_SEQ
 			python ./Python_Script/bamChipQC.py --infile {output.processed_bam} --outfile $QC_PATH/{wildcards.sample}_processed_PBC.txt --cores {threads}
 			module unload python/2.7
+			
 			Rscript ./R_Script/run_spp_nodups.R -c={output.processed_bam} -odir=$QC_PATH/ -savp > $QC_PATH/{wildcards.sample}_processed_SPP.txt
 			##
 			#
